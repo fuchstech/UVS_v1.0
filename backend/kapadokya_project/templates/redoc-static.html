@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Kapadokya ÜVS API - Redoc</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="https://fonts.googleapis.com/css?family=Montserrat:300,400,700|Roboto:300,400,700" rel="stylesheet">
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Roboto, sans-serif;
+      }
+      
+      .api-info {
+        background-color: #e8f5e9;
+        border: 1px solid #4caf50;
+        border-radius: 4px;
+        margin: 10px;
+        padding: 15px;
+        position: absolute;
+        top: 0;
+        right: 0;
+        z-index: 1000;
+        width: 300px;
+        font-size: 14px;
+      }
+      
+      .api-key {
+        font-family: monospace;
+        background-color: #f5f5f5;
+        padding: 3px 6px;
+        border-radius: 3px;
+        border: 1px solid #ddd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="api-info">
+      <h3>API Anahtarı Bilgisi</h3>
+      <p>Tüm API isteklerinde aşağıdaki API anahtarını kullanın:</p>
+      <p><strong>X-API-KEY Header</strong>: <span class="api-key">5f46f9d0-ca57-4c39-a104-af1bad3022ea</span></p>
+    </div>
+    
+    <redoc spec-url='/static/api-schema.json'></redoc>
+    <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"></script>
+    <script>
+      // Bu kısımda gerçek bir API tanımı için Petstore örneğini kullanıyoruz
+      // Gerçek bir uygulamada kendi API tanımınızı oluşturmanız gerekir
+      document.addEventListener('DOMContentLoaded', function() {
+        const options = {
+          scrollYOffset: 50
+        };
+        
+        // Redoc'u manuel olarak initialize ediyoruz
+        Redoc.init(
+          '/static/api-schema.json',
+          options,
+          document.getElementsByTagName('redoc')[0]
+        );
+      });
+    </script>
+  </body>
+</html>

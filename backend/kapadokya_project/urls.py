@@ -6,7 +6,7 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.views.generic import RedirectView
-from .views import index, swagger_ui_view, static_swagger_view
+from .views import index, swagger_ui_view, static_swagger_view, static_redoc_view
 
 # Basitleştirilmiş Swagger şeması
 schema_view = get_schema_view(
@@ -25,7 +25,7 @@ urlpatterns = [
     # API documentation
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('swagger/', static_swagger_view, name='schema-swagger-ui'),
-    path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
+    path('redoc/', static_redoc_view, name='schema-redoc'),
     
     # API endpoints
     path('api/', include('kapadokya_project.api.urls')),

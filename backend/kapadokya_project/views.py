@@ -12,3 +12,6 @@ def swagger_ui_view(request):
 
 def static_swagger_view(request):
     return render(request, 'swagger-static.html')
+    
+def static_redoc_view(request):
+    return render(request, 'redoc-static.html')
