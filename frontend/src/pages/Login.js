@@ -13,9 +13,9 @@ const Login = ({ onLogin }) => {
     setError('');
 
     try {
-      // Gerçek API yerine simüle edilmiş oturumu kullanalım
-      // const userData = await AuthService.login(username, password);
-      const userData = await AuthService.simulateLogin(username, password);
+      // Gerçek API'yi kullanalım, simüle edilmiş oturum yerine
+      const userData = await AuthService.login(username, password);
+      // const userData = await AuthService.simulateLogin(username, password);
       onLogin(userData);
     } catch (error) {
       setError('Giriş başarısız. Kullanıcı adı veya şifre hatalı.');

@@ -1,9 +1,25 @@
+from rest_framework import viewsets
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
+from django.contrib.auth.models import User
 from .serializers import UserSerializer
+
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+
+class CameraViewSet(viewsets.ModelViewSet):
+    # Placeholder for Camera model
+    queryset = User.objects.none()
+    serializer_class = UserSerializer
+
+class ZoneViewSet(viewsets.ModelViewSet):
+    # Placeholder for Zone model
+    queryset = User.objects.none()
+    serializer_class = UserSerializer
 
 class LoginView(APIView):
     permission_classes = []  # No permission required
