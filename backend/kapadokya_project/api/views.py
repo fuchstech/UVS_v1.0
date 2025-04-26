@@ -1,49 +1,31 @@
-from rest_framework import viewsets, permissions
-from django.contrib.auth.models import User
-from .models import Camera, Zone, ProcessedImage
-from .serializers import UserSerializer, CameraSerializer, ZoneSerializer, ProcessedImageSerializer
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
+from django.contrib.auth import authenticate
+from rest_framework.authtoken.models import Token
+from .serializers import UserSerializer
 
-class UserViewSet(viewsets.ReadOnlyModelViewSet):
-    """
-    API endpoint to view users
-    """
-    queryset = User.objects.all().order_by('-date_joined')
-    serializer_class = UserSerializer
-    permission_classes = [permissions.IsAuthenticated]
+class LoginView(APIView):
+    permission_classes = []  # No permission required
 
-class CameraViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for camera management
-    """
-    queryset = Camera.objects.all()
-    serializer_class = CameraSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_queryset(self):
-        queryset = Camera.objects.all()
-        camera_type = self.request.query_params.get('type', None)
-        if camera_type is not None:
-            queryset = queryset.filter(camera_type=camera_type)
-        return queryset
+    def post(self, request):
+        username = request.data.get('username')
+        password = request.data.get('password')
 
-class ZoneViewSet(viewsets.ModelViewSet):
-    """
-    API endpoint for zone management
-    """
-    queryset = Zone.objects.all()
-    serializer_class = ZoneSerializer
-    permission_classes = [permissions.IsAuthenticated]
-    
-    def get_queryset(self):
-        queryset = Zone.objects.all()
-        camera_id = self.request.query_params.get('camera', None)
-        is_danger = self.request.query_params.get('is_danger', None)
+        user = authenticate(username=username, password=password)
         
-        if camera_id is not None:
-            queryset = queryset.filter(camera_id=camera_id)
-            
-        if is_danger is not None:
-            is_danger_bool = is_danger.lower() == 'true'
-            queryset = queryset.filter(is_danger_zone=is_danger_bool)
-            
-        return queryset
+        if user is not None:
+            token, _ = Token.objects.get_or_create(user=user)
+            return Response({
+                'token': token.key,
+                'id': user.id,
+                'username': user.username,
+                'name': f"{user.first_name} {user.last_name}",
+                'email': user.email,
+                'role': 'Yönetici' if user.is_staff else 'Kullanıcı'
+            })
+        else:
+            return Response(
+                {'detail': 'Geçersiz kullanıcı adı veya şifre.'},
+                status=status.HTTP_401_UNAUTHORIZED
+            )

@@ -1,112 +1,166 @@
 import axios from 'axios';
 
-// API base URL
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000/api';
+const API_URL = 'http://localhost:8000';
 
-// Create axios instance with default config
+// Axios instance with base configuration
 const apiClient = axios.create({
   baseURL: API_URL,
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
 
-// Add request interceptor to include auth token in requests
+// Add a request interceptor to include auth token
 apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+  config => {
+    const user = JSON.parse(localStorage.getItem('user'));
+    if (user && user.token) {
+      config.headers['Authorization'] = `Bearer ${user.token}`;
     }
     return config;
   },
-  (error) => {
+  error => {
     return Promise.reject(error);
   }
 );
 
-// Add response interceptor to handle common errors
+// Add a response interceptor to handle common errors
 apiClient.interceptors.response.use(
-  (response) => {
+  response => {
     return response;
   },
-  (error) => {
-    // Handle 401 Unauthorized errors (token expired)
+  error => {
+    // Handle 401 Unauthorized
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
+      localStorage.removeItem('user');
       window.location.href = '/login';
     }
     return Promise.reject(error);
   }
 );
 
-// Generic API service methods
 const ApiService = {
-  get: async (endpoint, params = {}) => {
+  get: async (url, params = {}) => {
     try {
-      const response = await apiClient.get(endpoint, { params });
+      const response = await apiClient.get(url, { params });
       return response.data;
     } catch (error) {
-      console.error(`GET ${endpoint} error:`, error);
       throw error;
     }
   },
-
-  post: async (endpoint, data = {}) => {
+  
+  post: async (url, data = {}) => {
     try {
-      const response = await apiClient.post(endpoint, data);
+      const response = await apiClient.post(url, data);
       return response.data;
     } catch (error) {
-      console.error(`POST ${endpoint} error:`, error);
       throw error;
     }
   },
-
-  put: async (endpoint, data = {}) => {
+  
+  put: async (url, data = {}) => {
     try {
-      const response = await apiClient.put(endpoint, data);
+      const response = await apiClient.put(url, data);
       return response.data;
     } catch (error) {
-      console.error(`PUT ${endpoint} error:`, error);
       throw error;
     }
   },
-
-  delete: async (endpoint) => {
+  
+  delete: async (url) => {
     try {
-      const response = await apiClient.delete(endpoint);
+      const response = await apiClient.delete(url);
       return response.data;
     } catch (error) {
-      console.error(`DELETE ${endpoint} error:`, error);
       throw error;
     }
   },
-
-  uploadFile: async (endpoint, file, onProgress) => {
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      const response = await apiClient.post(endpoint, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-        onUploadProgress: (progressEvent) => {
-          if (onProgress) {
-            const percentCompleted = Math.round(
-              (progressEvent.loaded * 100) / progressEvent.total
-            );
-            onProgress(percentCompleted);
-          }
-        },
-      });
-      
-      return response.data;
-    } catch (error) {
-      console.error(`File upload to ${endpoint} error:`, error);
-      throw error;
-    }
+  
+  // Simüle edilmiş veri fonksiyonları (geliştirme aşamasında kullanmak için)
+  
+  // Örnek: Simüle edilmiş uyarılar
+  getSimulatedAlerts: () => {
+    return [
+      {
+        id: 1,
+        alert_type: 'Baret İhlali',
+        camera_name: 'Kamera-1 (Üretim Alanı)',
+        timestamp: new Date().toISOString(),
+        status: 'Açık',
+        priority: 'Yüksek'
+      },
+      {
+        id: 2,
+        alert_type: 'Tehlikeli Alan Girişi',
+        camera_name: 'Kamera-3 (Depo)',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        status: 'İnceleniyor',
+        priority: 'Orta'
+      },
+      {
+        id: 3,
+        alert_type: 'Eldiven İhlali',
+        camera_name: 'Kamera-2 (Montaj Hattı)',
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+        status: 'Çözüldü',
+        priority: 'Düşük'
+      }
+    ];
   },
+  
+  // Örnek: Simüle edilmiş görevler
+  getSimulatedTasks: () => {
+    return [
+      {
+        id: 1,
+        title: 'Montaj Hattı Kontrolü',
+        assigned_to: 'Ahmet Yılmaz',
+        status: 'Devam Ediyor',
+        start_date: new Date().toISOString(),
+        end_date: null
+      },
+      {
+        id: 2,
+        title: 'Kamera Kurulumu',
+        assigned_to: 'Mehmet Öz',
+        status: 'Tamamlandı',
+        start_date: new Date(Date.now() - 86400000).toISOString(),
+        end_date: new Date().toISOString()
+      },
+      {
+        id: 3,
+        title: 'YOLOv11 Model Güncellemesi',
+        assigned_to: 'Ayşe Demir',
+        status: 'Beklemede',
+        start_date: new Date(Date.now() + 86400000).toISOString(),
+        end_date: null
+      }
+    ];
+  },
+  
+  // Örnek: Simüle edilmiş raporlar
+  getSimulatedReports: () => {
+    return [
+      {
+        id: 1,
+        title: 'Haftalık İSG Raporu',
+        created_at: new Date().toISOString(),
+        report_type: 'İSG'
+      },
+      {
+        id: 2,
+        title: 'Aylık Verimlilik Raporu',
+        created_at: new Date(Date.now() - 604800000).toISOString(),
+        report_type: 'Verimlilik'
+      },
+      {
+        id: 3,
+        title: 'Üretim Hattı Analizi',
+        created_at: new Date(Date.now() - 1209600000).toISOString(),
+        report_type: 'Üretim'
+      }
+    ];
+  }
 };
 
 export default ApiService;

@@ -1,33 +1,29 @@
-import ApiService from './ApiService';
+import axios from 'axios';
+
+const API_URL = 'http://localhost:8000/api/';
 
 const AuthService = {
   login: async (username, password) => {
     try {
-      const response = await ApiService.post('/auth/login/', {
+      const response = await axios.post(`${API_URL}auth/login/`, {
         username,
-        password,
+        password
       });
       
-      // Store token in localStorage
-      localStorage.setItem('token', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user));
+      if (response.data.token) {
+        localStorage.setItem('user', JSON.stringify(response.data));
+      }
       
-      return response.user;
+      return response.data;
     } catch (error) {
-      console.error('Login error:', error);
       throw error;
     }
   },
-
+  
   logout: () => {
-    localStorage.removeItem('token');
     localStorage.removeItem('user');
   },
-
-  register: async (userData) => {
-    return ApiService.post('/auth/register/', userData);
-  },
-
+  
   getCurrentUser: () => {
     const userStr = localStorage.getItem('user');
     if (userStr) {
@@ -35,46 +31,26 @@ const AuthService = {
     }
     return null;
   },
-
-  isAuthenticated: () => {
-    return !!localStorage.getItem('token');
-  },
-
-  refreshToken: async () => {
-    try {
-      const response = await ApiService.post('/auth/token/refresh/');
-      localStorage.setItem('token', response.token);
-      return response.token;
-    } catch (error) {
-      console.error('Token refresh error:', error);
-      // If refresh fails, logout
-      AuthService.logout();
-      throw error;
-    }
-  },
-
-  updateProfile: async (userData) => {
-    try {
-      const response = await ApiService.put('/auth/profile/', userData);
+  
+  // Simüle edilmiş oturum açma (backend olmadan test için)
+  simulateLogin: (username, password) => {
+    // Test kullanıcısı
+    if (username === 'admin' && password === 'admin123') {
+      const userData = {
+        id: 1,
+        username: 'admin',
+        name: 'Admin Kullanıcı',
+        email: 'admin@kapadokya.com',
+        role: 'Yönetici',
+        token: 'simulated-jwt-token'
+      };
       
-      // Update stored user data
-      const currentUser = AuthService.getCurrentUser();
-      const updatedUser = { ...currentUser, ...response };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      
-      return updatedUser;
-    } catch (error) {
-      console.error('Profile update error:', error);
-      throw error;
+      localStorage.setItem('user', JSON.stringify(userData));
+      return userData;
     }
-  },
-
-  changePassword: async (currentPassword, newPassword) => {
-    return ApiService.post('/auth/change-password/', {
-      current_password: currentPassword,
-      new_password: newPassword,
-    });
-  },
+    
+    throw new Error('Geçersiz kullanıcı adı veya şifre');
+  }
 };
 
 export default AuthService;

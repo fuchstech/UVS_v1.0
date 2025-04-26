@@ -15,15 +15,20 @@ schema_view = get_schema_view(
       license=openapi.License(name="Özel Lisans"),
    ),
    public=True,
-   permission_classes=(permissions.IsAuthenticated,),
+   permission_classes=(permissions.AllowAny,),
+   security=[{"ApiKeyAuth": []}],
 )
 
+from django.views.generic import RedirectView
+from .views import index, swagger_ui_view
+
 urlpatterns = [
+    path('', index, name='index'),
     path('admin/', admin.site.urls),
     
     # API documentation
     path('swagger<format>/', schema_view.without_ui(cache_timeout=0), name='schema-json'),
-    path('swagger/', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
+    path('swagger/', swagger_ui_view, name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
     
     # API endpoints

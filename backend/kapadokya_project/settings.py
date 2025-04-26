@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     
     # Third party apps
     'rest_framework',
+    'rest_framework.authtoken',
     'corsheaders',
     'drf_yasg',
     
@@ -42,6 +43,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'kapadokya_project.middleware.ApiKeyMiddleware',
 ]
 
 ROOT_URLCONF = 'kapadokya_project.urls'
@@ -49,7 +51,7 @@ ROOT_URLCONF = 'kapadokya_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'kapadokya_project/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -113,10 +115,15 @@ REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
+        'rest_framework_api_key.authentication.APIKeyAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 20,
 }
+
+# API Key settings
+API_KEY_CUSTOM_HEADER = "X-API-KEY"
+API_KEY = "5f46f9d0-ca57-4c39-a104-af1bad3022ea"
 
 # CORS settings
 CORS_ALLOWED_ORIGINS = [

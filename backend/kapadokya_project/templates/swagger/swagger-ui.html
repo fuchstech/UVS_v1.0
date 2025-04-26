@@ -1,0 +1,59 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Kapadokya ÜVS API Dokümantasyonu</title>
+    <meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="//unpkg.com/swagger-ui-dist@3/swagger-ui.css" />
+  </head>
+  <body>
+    <div id="swagger-ui"></div>
+    <script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+    <script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js"></script>
+    <script>
+    window.onload = function() {
+      const ui = SwaggerUIBundle({
+        url: "{% url 'schema-json' '.json' %}",
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "BaseLayout",
+        securityDefinitions: {
+          ApiKeyAuth: {
+            type: "apiKey",
+            name: "X-API-KEY",
+            in: "header"
+          }
+        },
+        defaultModelsExpandDepth: 1,
+        defaultModelExpandDepth: 1
+      });
+
+      // API key'i önceden ayarla
+      ui.preauthorizeApiKey("ApiKeyAuth", "5f46f9d0-ca57-4c39-a104-af1bad3022ea");
+
+      // Add a message about the pre-configured API key
+      const apiKeyMessage = document.createElement('div');
+      apiKeyMessage.style.margin = '20px';
+      apiKeyMessage.style.padding = '10px';
+      apiKeyMessage.style.backgroundColor = '#e8f5e9';
+      apiKeyMessage.style.border = '1px solid #4caf50';
+      apiKeyMessage.style.borderRadius = '4px';
+      apiKeyMessage.innerHTML = '<strong>Bilgi:</strong> API Key otomatik olarak yapılandırıldı (5f46f9d0-ca57-4c39-a104-af1bad3022ea). "Authorize" düğmesini kullanarak doğrulayabilirsiniz.';
+      
+      // Insert the message after the Swagger UI loads
+      setTimeout(() => {
+        const swaggerUI = document.getElementById('swagger-ui');
+        swaggerUI.insertBefore(apiKeyMessage, swaggerUI.firstChild);
+      }, 500);
+    }
+    </script>
+  </body>
+</html>
