@@ -8,6 +8,10 @@ const AuthService = {
       const response = await axios.post(`${API_URL}auth/login/`, {
         username,
         password
+      }, {
+        headers: {
+          'X-API-KEY': '5f46f9d0-ca57-4c39-a104-af1bad3022ea'
+        }
       });
       
       if (response.data.token) {

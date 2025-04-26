@@ -9,3 +9,6 @@ def swagger_ui_view(request):
     return render(request, 'swagger/swagger-ui.html', {
         'api_key': settings.API_KEY
     })
+
+def static_swagger_view(request):
+    return render(request, 'swagger-static.html')

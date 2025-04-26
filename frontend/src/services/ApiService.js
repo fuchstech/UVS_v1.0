@@ -15,8 +15,10 @@ apiClient.interceptors.request.use(
   config => {
     const user = JSON.parse(localStorage.getItem('user'));
     if (user && user.token) {
-      config.headers['Authorization'] = `Bearer ${user.token}`;
+      config.headers['Authorization'] = `Token ${user.token}`;
     }
+    // API key ekleme
+    config.headers['X-API-KEY'] = '5f46f9d0-ca57-4c39-a104-af1bad3022ea';
     return config;
   },
   error => {

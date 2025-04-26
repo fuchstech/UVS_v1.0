@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kapadokya ÜVS API Dokümantasyonu</title>
+    <link rel="stylesheet" type="text/css" href="//unpkg.com/swagger-ui-dist@3/swagger-ui.css" />
+    <style>
+        html {
+            box-sizing: border-box;
+            overflow: -moz-scrollbars-vertical;
+            overflow-y: scroll;
+        }
+        
+        *,
+        *:before,
+        *:after {
+            box-sizing: inherit;
+        }
+        
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        
+        .api-info {
+            background-color: #e8f5e9;
+            border: 1px solid #4caf50;
+            border-radius: 4px;
+            margin: 20px;
+            padding: 15px;
+        }
+        
+        .api-key {
+            font-family: monospace;
+            background-color: #f5f5f5;
+            padding: 3px 6px;
+            border-radius: 3px;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="api-info">
+        <h2>Kapadokya ÜVS API Dokümantasyonu</h2>
+        <p>Tüm API isteklerinde aşağıdaki API anahtarını kullanın:</p>
+        <p><strong>X-API-KEY Header</strong>: <span class="api-key">5f46f9d0-ca57-4c39-a104-af1bad3022ea</span></p>
+        <p>Bu sayfa, projenin API'lerini keşfetmenize ve test etmenize olanak tanır.</p>
+    </div>
+
+    <div id="swagger-ui"></div>
+
+    <script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-bundle.js"></script>
+    <script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            // Manual API definition
+            const spec = {
+                openapi: "3.0.0",
+                info: {
+                    title: "Kapadokya ÜVS API",
+                    version: "1.0.0",
+                    description: "Kapadokya Üretim Verimlilik Sistemi (ÜVS) RESTful API"
+                },
+                servers: [
+                    {
+                        url: "/api",
+                        description: "API Base URL"
+                    }
+                ],
+                paths: {
+                    "/auth/login/": {
+                        post: {
+                            summary: "Kullanıcı girişi",
+                            description: "Kullanıcı adı ve şifre ile doğrulama yaparak bir token alır",
+                            tags: ["Authentication"],
+                            requestBody: {
+                                required: true,
+                                content: {
+                                    "application/json": {
+                                        schema: {
+                                            type: "object",
+                                            required: ["username", "password"],
+                                            properties: {
+                                                username: {
+                                                    type: "string",
+                                                    example: "admin"
+                                                },
+                                                password: {
+                                                    type: "string",
+                                                    format: "password",
+                                                    example: "your_password"
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            responses: {
+                                "200": {
+                                    description: "Successful login",
+                                    content: {
+                                        "application/json": {
+                                            schema: {
+                                                type: "object",
+                                                properties: {
+                                                    token: {
+                                                        type: "string"
+                                                    },
+                                                    id: {
+                                                        type: "integer"
+                                                    },
+                                                    username: {
+                                                        type: "string"
+                                                    },
+                                                    name: {
+                                                        type: "string"
+                                                    },
+                                                    email: {
+                                                        type: "string"
+                                                    },
+                                                    role: {
+                                                        type: "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                "401": {
+                                    description: "Authentication failed"
+                                }
+                            }
+                        }
+                    },
+                    "/isg/alerts/": {
+                        get: {
+                            summary: "İSG Uyarıları",
+                            description: "İş Sağlığı ve Güvenliği uyarılarını listeler",
+                            tags: ["İSG"],
+                            security: [
+                                {
+                                    ApiKeyAuth: []
+                                }
+                            ],
+                            parameters: [
+                                {
+                                    name: "X-API-KEY",
+                                    in: "header",
+                                    required: true,
+                                    schema: {
+                                        type: "string"
+                                    },
+                                    description: "API anahtarı"
+                                }
+                            ],
+                            responses: {
+                                "200": {
+                                    description: "Successful operation"
+                                },
+                                "403": {
+                                    description: "Authentication failed"
+                                }
+                            }
+                        }
+                    },
+                    "/verim/tasks/": {
+                        get: {
+                            summary: "Verimlilik Görevleri",
+                            description: "Verimlilik takip görevlerini listeler",
+                            tags: ["Verimlilik"],
+                            security: [
+                                {
+                                    ApiKeyAuth: []
+                                }
+                            ],
+                            parameters: [
+                                {
+                                    name: "X-API-KEY",
+                                    in: "header",
+                                    required: true,
+                                    schema: {
+                                        type: "string"
+                                    },
+                                    description: "API anahtarı"
+                                }
+                            ],
+                            responses: {
+                                "200": {
+                                    description: "Successful operation"
+                                }
+                            }
+                        }
+                    },
+                    "/rapor/reports/": {
+                        get: {
+                            summary: "Raporlar",
+                            description: "Sistem raporlarını listeler",
+                            tags: ["Raporlar"],
+                            security: [
+                                {
+                                    ApiKeyAuth: []
+                                }
+                            ],
+                            parameters: [
+                                {
+                                    name: "X-API-KEY",
+                                    in: "header",
+                                    required: true,
+                                    schema: {
+                                        type: "string"
+                                    },
+                                    description: "API anahtarı"
+                                }
+                            ],
+                            responses: {
+                                "200": {
+                                    description: "Successful operation"
+                                }
+                            }
+                        }
+                    }
+                },
+                components: {
+                    securitySchemes: {
+                        ApiKeyAuth: {
+                            type: "apiKey",
+                            in: "header",
+                            name: "X-API-KEY"
+                        }
+                    }
+                }
+            };
+
+            const ui = SwaggerUIBundle({
+                spec: spec,
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                layout: "BaseLayout"
+            });
+        }
+    </script>
+</body>
+</html>

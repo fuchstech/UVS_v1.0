@@ -13,6 +13,7 @@
     <script src="//unpkg.com/swagger-ui-dist@3/swagger-ui-standalone-preset.js"></script>
     <script>
     window.onload = function() {
+      // Swagger-UI yapılandırması
       const ui = SwaggerUIBundle({
         url: "{% url 'schema-json' '.json' %}",
         dom_id: '#swagger-ui',
@@ -25,19 +26,12 @@
           SwaggerUIBundle.plugins.DownloadUrl
         ],
         layout: "BaseLayout",
-        securityDefinitions: {
-          ApiKeyAuth: {
-            type: "apiKey",
-            name: "X-API-KEY",
-            in: "header"
-          }
-        },
         defaultModelsExpandDepth: 1,
         defaultModelExpandDepth: 1
       });
 
       // API key'i önceden ayarla
-      ui.preauthorizeApiKey("ApiKeyAuth", "5f46f9d0-ca57-4c39-a104-af1bad3022ea");
+      // ui.preauthorizeApiKey("ApiKeyAuth", "5f46f9d0-ca57-4c39-a104-af1bad3022ea");
 
       // Add a message about the pre-configured API key
       const apiKeyMessage = document.createElement('div');
@@ -46,7 +40,7 @@
       apiKeyMessage.style.backgroundColor = '#e8f5e9';
       apiKeyMessage.style.border = '1px solid #4caf50';
       apiKeyMessage.style.borderRadius = '4px';
-      apiKeyMessage.innerHTML = '<strong>Bilgi:</strong> API Key otomatik olarak yapılandırıldı (5f46f9d0-ca57-4c39-a104-af1bad3022ea). "Authorize" düğmesini kullanarak doğrulayabilirsiniz.';
+      apiKeyMessage.innerHTML = '<strong>Bilgi:</strong> API isteklerinde X-API-KEY headerını kullanarak API key ekleyin: <code>5f46f9d0-ca57-4c39-a104-af1bad3022ea</code>';
       
       // Insert the message after the Swagger UI loads
       setTimeout(() => {

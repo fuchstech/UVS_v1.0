@@ -16,3 +16,4 @@ django-filter==23.4
 gunicorn==21.2.0  # For deployment
 psycopg2-binary==2.9.9  # PostgreSQL adapter
 cvzone # For image processing
+djangorestframework-api-key

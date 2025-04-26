@@ -13,6 +13,12 @@ class ApiKeyMiddleware:
             if api_key_header != settings.API_KEY:
                 return JsonResponse({'detail': 'Invalid or missing API key'}, status=403)
         
+        # Login endpoint'i için de API key kontrolü yap
+        if request.path == '/api/auth/login/':
+            api_key_header = request.META.get('HTTP_X_API_KEY', '')
+            if api_key_header != settings.API_KEY:
+                return JsonResponse({'detail': 'Invalid or missing API key'}, status=403)
+        
         # Swagger ve Admin endpointlerini istisnalardan say
         if request.path.startswith('/swagger/') or request.path.startswith('/admin/') or request.path == '/':
             return self.get_response(request)

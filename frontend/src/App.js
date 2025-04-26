@@ -23,9 +23,9 @@ function App() {
 
   useEffect(() => {
     // Check if user is authenticated on component mount
-    const checkAuth = async () => {
+    const checkAuth = () => {
       try {
-        const userData = await AuthService.getCurrentUser();
+        const userData = AuthService.getCurrentUser();
         if (userData) {
           setUser(userData);
           setIsAuthenticated(true);
