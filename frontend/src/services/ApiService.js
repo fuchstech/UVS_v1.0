@@ -78,6 +78,24 @@ const ApiService = {
     }
   },
   
+  postFormData: async (url, formData) => {
+    try {
+      const response = await axios.post(`${API_URL}/${url}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'X-API-KEY': '5f46f9d0-ca57-4c39-a104-af1bad3022ea',
+          'Authorization': (() => {
+            const user = JSON.parse(localStorage.getItem('user'));
+            return user && user.token ? `Token ${user.token}` : '';
+          })()
+        }
+      });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  },
+  
   // Simüle edilmiş veri fonksiyonları (geliştirme aşamasında kullanmak için)
   
   // Örnek: Simüle edilmiş uyarılar

@@ -1,8 +1,15 @@
+import os
+import tempfile
+import cv2
 from rest_framework import viewsets, permissions, status
-from rest_framework.decorators import action
+from rest_framework.decorators import action, parser_classes
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.parsers import MultiPartParser, FormParser
 from django.utils import timezone
+from django.conf import settings
+from django.core.files.storage import default_storage
+from django.core.files.base import ContentFile
 from .models import SafetyEquipment, SafetyViolation, SafetyReport
 from .serializers import SafetyEquipmentSerializer, SafetyViolationSerializer, SafetyReportSerializer
 from .tasks import process_image_task, generate_daily_safety_report

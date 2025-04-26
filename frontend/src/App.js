@@ -13,6 +13,11 @@ import Reports from './pages/Reports';
 import Login from './pages/Login';
 import NotFound from './pages/NotFound';
 
+// ISG Modülleri
+import EquipmentControl from './pages/isg/EquipmentControl';
+import DangerZones from './pages/isg/DangerZones';
+import WorkerSafety from './pages/isg/WorkerSafety';
+
 // API Service
 import AuthService from './services/AuthService';
 
@@ -105,6 +110,25 @@ function App() {
             <Route path="/reports" element={
               <ProtectedRoute>
                 <Reports />
+              </ProtectedRoute>
+            } />
+            
+            {/* ISG Modülü Route'ları */}
+            <Route path="/isg/equipment" element={
+              <ProtectedRoute>
+                <EquipmentControl />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/isg/danger-zones" element={
+              <ProtectedRoute>
+                <DangerZones />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/isg/worker-safety" element={
+              <ProtectedRoute>
+                <WorkerSafety />
               </ProtectedRoute>
             } />
             

@@ -42,9 +42,9 @@ const Sidebar = ({ user }) => {
       <div className="sidebar-section">
         <h3>İSG Modülleri</h3>
         <ul className="submenu">
-          <li><a href="#"><i className="fas fa-hard-hat"></i> Ekipman Kontrolü</a></li>
-          <li><a href="#"><i className="fas fa-exclamation-triangle"></i> Tehlikeli Alan</a></li>
-          <li><a href="#"><i className="fas fa-user-shield"></i> İşçi Güvenliği</a></li>
+          <li><NavLink to="/isg/equipment"><i className="fas fa-hard-hat"></i> Ekipman Kontrolü</NavLink></li>
+          <li><NavLink to="/isg/danger-zones"><i className="fas fa-exclamation-triangle"></i> Tehlikeli Alan</NavLink></li>
+          <li><NavLink to="/isg/worker-safety"><i className="fas fa-user-shield"></i> İşçi Güvenliği</NavLink></li>
         </ul>
       </div>
       

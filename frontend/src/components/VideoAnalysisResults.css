@@ -1,0 +1,192 @@
+.video-analysis-results {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-top: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.video-analysis-results h3 {
+  margin-top: 0;
+  color: #2c3e50;
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+}
+
+.summary-info {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #e9f7fe;
+  border-radius: 6px;
+  border-left: 4px solid #3498db;
+}
+
+.summary-item {
+  margin-right: 20px;
+  margin-bottom: 5px;
+}
+
+.summary-label {
+  font-weight: 600;
+  color: #34495e;
+  margin-right: 5px;
+}
+
+.summary-value {
+  font-weight: 600;
+  color: #3498db;
+}
+
+.results-list {
+  margin-top: 15px;
+}
+
+.result-card {
+  background-color: white;
+  border-radius: 6px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  margin-bottom: 15px;
+  overflow: hidden;
+}
+
+.result-header {
+  padding: 12px 15px;
+  background-color: #34495e;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.result-id {
+  font-weight: 600;
+}
+
+.result-timestamp {
+  color: #ecf0f1;
+}
+
+.result-content {
+  display: flex;
+  padding: 15px;
+}
+
+.result-image {
+  flex: 0 0 200px;
+  margin-right: 15px;
+}
+
+.image-placeholder {
+  background-color: #ecf0f1;
+  height: 150px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #7f8c8d;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  text-align: center;
+  padding: 10px;
+}
+
+.result-details {
+  flex: 1;
+}
+
+.result-details h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #2c3e50;
+}
+
+.equipment-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.equipment-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #ecf0f1;
+}
+
+.equipment-item:last-child {
+  border-bottom: none;
+}
+
+.equipment-name {
+  font-weight: 600;
+  color: #34495e;
+}
+
+.equipment-confidence {
+  color: #7f8c8d;
+}
+
+.equipment-status {
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 3px;
+}
+
+.status-success {
+  background-color: #e6f9f1;
+  color: #27ae60;
+}
+
+.status-danger {
+  background-color: #fdecef;
+  color: #e74c3c;
+}
+
+.loading {
+  text-align: center;
+  padding: 15px;
+  color: #7f8c8d;
+}
+
+.error-message {
+  color: #e74c3c;
+  background-color: #fadbd8;
+  padding: 15px;
+  border-radius: 6px;
+  margin-top: 15px;
+}
+
+.no-results {
+  text-align: center;
+  padding: 30px;
+  color: #7f8c8d;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  margin-top: 15px;
+}
+
+.load-more {
+  text-align: center;
+  margin-top: 15px;
+}
+
+.load-more-button {
+  background-color: #3498db;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.3s;
+}
+
+.load-more-button:hover {
+  background-color: #2980b9;
+}
+
+.load-more-button:disabled {
+  background-color: #95a5a6;
+  cursor: not-allowed;
+}

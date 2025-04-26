@@ -1,10 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import ApiService from '../../services/ApiService';
+import VideoUpload from '../../components/VideoUpload';
+import VideoAnalysisResults from '../../components/VideoAnalysisResults';
+import './isg.css';
 
 const EquipmentControl = () => {
   const [equipment, setEquipment] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [analysisResults, setAnalysisResults] = useState(null);
+  const [activeCamera, setActiveCamera] = useState(1); // Varsayılan kamera ID'si
 
   useEffect(() => {
     // Gerçek API'ye bağlanmak yerine simüle edilmiş veri kullanıyoruz
@@ -138,6 +143,24 @@ const EquipmentControl = () => {
             </div>
           </div>
         </div>
+      </div>
+      
+      <div className="video-analysis-section">
+        <h3>Ekipman Tespiti için Video Analizi</h3>
+        <p className="section-description">
+          Bu bölümde, bilgisayarınızdan yükleyeceğiniz video dosyasındaki ekipman kullanımını analiz edebilirsiniz.
+          Sistem, çalışanların gerekli güvenlik ekipmanlarını kullanıp kullanmadığını tespit eder.
+        </p>
+        
+        <VideoUpload 
+          cameraId={activeCamera}
+          onUploadSuccess={(data) => setAnalysisResults(data)}
+          onUploadError={(err) => setError(err)}
+        />
+        
+        {analysisResults && (
+          <VideoAnalysisResults resultData={analysisResults} />
+        )}
       </div>
       
       <div className="action-buttons">

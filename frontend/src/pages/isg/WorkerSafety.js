@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ApiService from '../../services/ApiService';
+import './isg.css';
 
 const WorkerSafety = () => {
   const [workers, setWorkers] = useState([]);

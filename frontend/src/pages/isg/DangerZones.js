@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ApiService from '../../services/ApiService';
+import './isg.css';
 
 const DangerZones = () => {
   const [zones, setZones] = useState([]);
