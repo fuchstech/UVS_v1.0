@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import HttpResponse
 from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
@@ -27,7 +28,11 @@ urlpatterns = [
     path('swagger/', static_swagger_view, name='schema-swagger-ui'),
     path('redoc/', static_redoc_view, name='schema-redoc'),
     
-    # API endpoints
+    # API Dokümantasyon şeması
+    path('api/api-schema.json', lambda request: HttpResponse(
+        open('C:\\Users\\fuchs\\Desktop\\UVS_V1.0\\backend\\static\\api\\api-schema.json').read(),
+        content_type='application/json'
+    )),
     path('api/', include('kapadokya_project.api.urls')),
     path('api/isg/', include('kapadokya_project.isg.urls')),
     path('api/verim/', include('kapadokya_project.verim_sistemi.urls')),

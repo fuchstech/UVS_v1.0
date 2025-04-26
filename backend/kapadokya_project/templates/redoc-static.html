@@ -42,7 +42,7 @@
       <p><strong>X-API-KEY Header</strong>: <span class="api-key">5f46f9d0-ca57-4c39-a104-af1bad3022ea</span></p>
     </div>
     
-    <redoc spec-url='/static/api-schema.json'></redoc>
+    <redoc spec-url='/api/api-schema.json'></redoc>
     <script src="https://cdn.jsdelivr.net/npm/redoc@next/bundles/redoc.standalone.js"></script>
     <script>
       // Bu kısımda gerçek bir API tanımı için Petstore örneğini kullanıyoruz
@@ -54,7 +54,7 @@
         
         // Redoc'u manuel olarak initialize ediyoruz
         Redoc.init(
-          '/static/api-schema.json',
+          '/api/api-schema.json',
           options,
           document.getElementsByTagName('redoc')[0]
         );
