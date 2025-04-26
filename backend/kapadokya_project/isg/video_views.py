@@ -17,7 +17,9 @@ class ProcessVideoAPIView(APIView):
     """
     API endpoint to process video uploads
     """
-    permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.IsAuthenticated]
+    # permission_classes = [permissions.AllowAny]
+    permission_classes = []  # Boş liste, tüm izinleri devre dışı bırakır
     parser_classes = [MultiPartParser, FormParser]
     
     def post(self, request, format=None):

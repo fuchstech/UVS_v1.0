@@ -80,9 +80,13 @@ const ApiService = {
   
   postFormData: async (url, formData) => {
     try {
-      const response = await axios.post(`${API_URL}/${url}`, formData, {
+      // URL başına / ekleyin
+      const fullUrl = url.startsWith('/') ? `${API_URL}${url}` : `${API_URL}/${url}`;
+      console.log('Gönderilen tam URL:', fullUrl);
+      
+      // Content-Type header'a gerek yok, FormData sınırı otomatik oluşturur
+      const response = await axios.post(fullUrl, formData, {
         headers: {
-          'Content-Type': 'multipart/form-data',
           'X-API-KEY': '5f46f9d0-ca57-4c39-a104-af1bad3022ea',
           'Authorization': (() => {
             const user = JSON.parse(localStorage.getItem('user'));
@@ -92,6 +96,7 @@ const ApiService = {
       });
       return response;
     } catch (error) {
+      console.error('postFormData hata:', error);
       throw error;
     }
   },

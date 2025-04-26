@@ -8,6 +8,7 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [sampleRate, setSampleRate] = useState(30);
   const [uploadError, setUploadError] = useState(null);
+  const [testMode, setTestMode] = useState(false);
 
   const handleFileChange = (event) => {
     const file = event.target.files[0];
@@ -63,6 +64,7 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
       console.log('Video boyutu:', (selectedFile.size / (1024 * 1024)).toFixed(2), 'MB');
       
       try {
+        // API path düzgeltildi - 'api/' ön ekini ekle
         const response = await ApiService.postFormData('api/isg/process-video/', formData);
         console.log('Video yükleme yanıtı:', response);
         
@@ -95,6 +97,85 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
       console.error('Genel hata:', e);
       setIsUploading(false);
       setUploadError(`Beklenmeyen bir hata oluştu: ${e.message}`);
+      
+      if (onUploadError) {
+        onUploadError(e.message);
+      }
+    }
+  };
+
+  const handleTestUpload = async () => {
+    if (!selectedFile) {
+      setUploadError('Lütfen bir video dosyası seçin.');
+      return;
+    }
+
+    if (!cameraId) {
+      setUploadError('Kamera ID gerekli.');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+    setUploadError(null);
+
+    const formData = new FormData();
+    formData.append('video', selectedFile);
+    formData.append('camera_id', cameraId);
+
+    try {
+      // Progress simulation
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          const newProgress = prev + 10;
+          if (newProgress >= 95) {
+            clearInterval(progressInterval);
+            return 95;
+          }
+          return newProgress;
+        });
+      }, 200);
+
+      console.log('TEST: Video yükleme isteği başladı. Kamera ID:', cameraId);
+      console.log('TEST: Video boyutu:', (selectedFile.size / (1024 * 1024)).toFixed(2), 'MB');
+      
+      try {
+        // API path düzgeltildi - 'api/' ön ekini ekle
+        const response = await ApiService.postFormData('api/isg/test-upload/', formData);
+        console.log('TEST: Başarılı yanıt:', response);
+        
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+        setIsUploading(false);
+        
+        // Test başarılı olduğunda kullanıcıya göster
+        if (onUploadSuccess) {
+          onUploadSuccess({
+            status: "Test başarılı",
+            message: "Video dosyası başarıyla yüklendi.",
+            testResult: response.data
+          });
+        }
+      } catch (error) {
+        console.error('TEST: Video yükleme hatası:', error);
+        clearInterval(progressInterval);
+        setIsUploading(false);
+        
+        const errorMessage = error.response?.data?.detail || 
+                             error.message || 
+                             'TEST: Video yüklenirken bir hata oluştu.';
+                             
+        console.error('TEST: Hata detayı:', errorMessage);
+        setUploadError(`TEST Hatası: ${errorMessage}`);
+        
+        if (onUploadError) {
+          onUploadError(errorMessage);
+        }
+      }
+    } catch (e) {
+      console.error('TEST: Genel hata:', e);
+      setIsUploading(false);
+      setUploadError(`TEST: Beklenmeyen bir hata oluştu: ${e.message}`);
       
       if (onUploadError) {
         onUploadError(e.message);
@@ -157,13 +238,28 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
             <span>{uploadProgress}% Yükleniyor...</span>
           </div>
         ) : (
-          <button 
-            className="upload-button"
-            onClick={handleUpload}
-            disabled={!selectedFile || isUploading}
-          >
-            Video Yükle ve İşle
-          </button>
+          <div className="button-group">
+            <button 
+              className="upload-button"
+              onClick={testMode ? handleTestUpload : handleUpload}
+              disabled={!selectedFile || isUploading}
+            >
+              {testMode ? "Test Yükleme" : "Video Yükle ve İşle"}
+            </button>
+            
+            <div className="toggle-container">
+              <label className="toggle-label">
+                <input
+                  type="checkbox"
+                  checked={testMode}
+                  onChange={() => setTestMode(!testMode)}
+                  disabled={isUploading}
+                />
+                Test Modu
+              </label>
+              <span className="help-text">Sadece yükleme testi yapar, video işlemez.</span>
+            </div>
+          </div>
         )}
       </div>
     </div>

@@ -112,3 +112,30 @@
   background-color: #3498db;
   transition: width 0.3s;
 }
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.toggle-container {
+  display: flex;
+  align-items: center;
+  margin-top: 5px;
+  background-color: #f2f2f2;
+  padding: 8px 12px;
+  border-radius: 4px;
+}
+
+.toggle-label {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.toggle-label input {
+  margin-right: 8px;
+}
