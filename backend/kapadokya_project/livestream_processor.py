@@ -1,44 +1,4 @@
-class LivestreamFrameAPIView(APIView):
-    """
-    Tek kare resim olarak görüntü veren API
-    Bu API, MJPEG akışı sorunlarında alternatif olarak kullanılabilir
-    """
-    def __init__(self):
-        super().__init__()
-        # Ana stream sınıfının örneği
-        self.processor = None
-        
-    def get(self, request):
-        # Global bir yönetici sınıfı olarak LivestreamProcessorView'in son örneğini kullan
-        global stream_processor_instance
-        
-        if not stream_processor_instance or not stream_processor_instance.is_processing:
-            return JsonResponse({
-                "error": "Stream aktif değil. Önce /livestream/ endpoint'ine istek yapın."
-            }, status=400)
-        
-        # Aktif işlemciden son kareyi al
-        try:
-            with stream_processor_instance.lock:
-                if stream_processor_instance.last_frame is not None:
-                    # Resmi base64 formatına dönüştür
-                    _, buffer = cv2.imencode('.jpg', stream_processor_instance.last_frame)
-                    jpg_as_text = base64.b64encode(buffer).decode('utf-8')
-                    
-                    # JSON yanıtı
-                    return JsonResponse({
-                        "image": jpg_as_text,
-                        "format": "base64",
-                        "timestamp": time.time(),
-                        "detections": stream_processor_instance.detections
-                    })
-                else:
-                    return JsonResponse({"error": "Henüz görüntü yok"}, status=404)
-        except Exception as e:
-            return JsonResponse({"error": f"Frame alınamadı: {str(e)}"}, status=500)
-
-# Global referans
-stream_processor_instance = None"""
+"""
 Canlı video akışı işleme modülü - kameradan görüntü alıp işler
 """
 import cv2
@@ -50,12 +10,12 @@ import threading
 import base64
 from pathlib import Path
 from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
-import base64
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LivestreamProcessorView(APIView):
@@ -74,6 +34,14 @@ class LivestreamProcessorView(APIView):
     
     def get(self, request):
         """Video akışını başlat"""
+        # Alternatif akış modu kontrolü
+        alt_mode = request.query_params.get('alt_mode', 'false').lower() == 'true'
+
+        if alt_mode:
+            # Alternatif akış modu - tek görüntü döndür
+            return self._get_single_frame(request)
+        
+        # MJPEG akış modu için devam et
         # Cache ve buffer ayarlarını uygun hale getir
         response = StreamingHttpResponse(
             streaming_content=self._generate_frames(),
@@ -420,9 +388,6 @@ class LivestreamProcessorView(APIView):
         """Kare akışını MJPEG formatında döndürür"""
         print("LIVESTREAM: Frame üretme başladı")
         frame_counter = 0
-
-        # MJPEG header - bu kısmı kaldır, StreamingHttpResponse için content_type zaten belirtiliyor
-        # yield "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n"
         
         while self.is_processing:
             try:
@@ -457,6 +422,39 @@ class LivestreamProcessorView(APIView):
                 time.sleep(0.1)
         
         print("LIVESTREAM: Frame üretimi durdu")
+
+    def _get_single_frame(self, request):
+        """Tek bir kare döndüren alternatif akış modu"""
+        try:
+            # Eğer hali hazırda işlenmiş son kare varsa kullan
+            with self.lock:
+                if self.last_frame is not None:
+                    frame = self.last_frame.copy()
+                else:
+                    # Henüz kare yoksa basit bir frame oluştur
+                    frame = np.zeros((480, 640, 3), dtype=np.uint8)
+                    cv2.putText(frame, f"Yükleniyor... Lütfen bekleyin", (20, 240),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), 2)
+            
+            # JPEG'e dönüştür
+            _, buffer = cv2.imencode('.jpg', frame)
+            jpeg_data = buffer.tobytes()
+            
+            # JPEG verisini döndür
+            response = HttpResponse(jpeg_data, content_type='image/jpeg')
+            response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+            response['Pragma'] = 'no-cache'
+            response['Expires'] = '0'
+            return response
+            
+        except Exception as e:
+            print(f"Tek kare döndürme hatası: {str(e)}")
+            # Hata durumunda boş bir görüntü döndür
+            error_frame = np.zeros((480, 640, 3), dtype=np.uint8)
+            cv2.putText(error_frame, f"Hata: {str(e)[:50]}", (20, 240),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 2)
+            _, buffer = cv2.imencode('.jpg', error_frame)
+            return HttpResponse(buffer.tobytes(), content_type='image/jpeg')
     
     def delete(self, request):
         """Video akışını durdur"""
@@ -465,3 +463,48 @@ class LivestreamProcessorView(APIView):
             self.video_camera.release()
             self.video_camera = None
         return Response({"status": "Video akışı durduruldu"})
+
+
+# Global referans için - LivestreamFrameAPIView için kullanılabilir
+stream_processor_instance = None
+
+
+# Tek kare resim için alternatif API
+class LivestreamFrameAPIView(APIView):
+    """
+    Tek kare resim olarak görüntü veren alternatif API
+    Bu API, MJPEG akışı sorunlarında alternatif olarak kullanılabilir
+    """
+    def __init__(self):
+        super().__init__()
+        # Ana stream sınıfının örneği
+        self.processor = None
+        
+    def get(self, request):
+        # Global bir yönetici sınıfı olarak LivestreamProcessorView'in son örneğini kullan
+        global stream_processor_instance
+        
+        if not stream_processor_instance or not stream_processor_instance.is_processing:
+            return JsonResponse({
+                "error": "Stream aktif değil. Önce /livestream/ endpoint'ine istek yapın."
+            }, status=400)
+        
+        # Aktif işlemciden son kareyi al
+        try:
+            with stream_processor_instance.lock:
+                if stream_processor_instance.last_frame is not None:
+                    # Resmi base64 formatına dönüştür
+                    _, buffer = cv2.imencode('.jpg', stream_processor_instance.last_frame)
+                    jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+                    
+                    # JSON yanıtı
+                    return JsonResponse({
+                        "image": jpg_as_text,
+                        "format": "base64",
+                        "timestamp": time.time(),
+                        "detections": stream_processor_instance.detections
+                    })
+                else:
+                    return JsonResponse({"error": "Henüz görüntü yok"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": f"Frame alınamadı: {str(e)}"}, status=500)

@@ -12,6 +12,10 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
   const streamRef = useRef(null);
   const [streamUrl, setStreamUrl] = useState('');
   const [streamStarted, setStreamStarted] = useState(false);
+  // Alternatif mod için state
+  const [useAltMode, setUseAltMode] = useState(false);
+  const [refreshInterval, setRefreshInterval] = useState(null);
+  const [frameUrl, setFrameUrl] = useState('');
 
   useEffect(() => {
     // Component mount olduğunda
@@ -27,12 +31,51 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraId, videoSource]);
 
+  // Alternatif mod için fonksiyon
+  const startAlternativeMode = () => {
+    // Parametreleri oluştur
+    let source_type = videoSource === 'camera' ? 'camera' : 'video';
+    let source_id = videoSource === 'camera' ? cameraId : streamUrl.split('source_id=')[1];
+    
+    // Alternatif mod base URL
+    const baseUrl = `/livestream/?alt_mode=true&source_type=${source_type}&source_id=${source_id}`;
+    
+    // İlk kareyi al
+    setFrameUrl(`${baseUrl}&ts=${new Date().getTime()}`);
+    
+    // Başlatma statüsünü güncelle
+    setIsStreaming(true);
+    setStreamStarted(true);
+    
+    // Saniyede 5 kez yeni kareler iste (200ms)
+    const interval = setInterval(() => {
+      setFrameUrl(`${baseUrl}&ts=${new Date().getTime()}`);
+    }, 200);
+    
+    setRefreshInterval(interval);
+    
+    console.log('Alternatif streaming modu başlatıldı');
+  };
+  
   const startStream = () => {
     setError(null);
+    
+    // Önce mevcut stream'i temizle
+    if (isStreaming) {
+      stopStream();
+    }
+    
+    // Alternatif modu kullan?    
+    if (useAltMode) {
+      startAlternativeMode();
+      return;
+    }
+    
     let url;
     
     if (videoSource === 'camera') {
-      url = `http://localhost:8000/livestream/?source_type=camera&source_id=${cameraId}`;
+      // Tam URL yerine göreceli URL kullan
+      url = `/livestream/?source_type=camera&source_id=${cameraId}`;
       setStreamUrl(url);
     } else if (videoSource === 'video') {
       // Video modu seçildiğinde, eğer stream URL'si yoksa video yüklemeyi bekle
@@ -69,9 +112,19 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
     if (isStreaming) {
       setIsStreaming(false);
       setStreamStarted(false);
+      
+      // Alternatif mod aktifse interval'i temizle
+      if (useAltMode && refreshInterval) {
+        clearInterval(refreshInterval);
+        setRefreshInterval(null);
+        setFrameUrl('');
+        console.log('Alternatif streaming modu durduruldu');
+        return;
+      }
+      
       try {
         // Stream'i durdurmak için DELETE isteği gönder
-        await fetch('http://localhost:8000/livestream/', {
+        await fetch('/livestream/', {
           method: 'DELETE',
         });
         console.log('Stream durduruldu');
@@ -126,7 +179,7 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
       
       try {
         // Video dosyasını stream modu için yükle
-        const response = await axios.post('http://localhost:8000/upload-stream-video/', formData);
+        const response = await axios.post('/upload-stream-video/', formData);
         
         console.log('Video yükleme yanıtı:', response);
         
@@ -137,17 +190,16 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
         // Video ID'sini al ve URL'yi ayarla
         if (response.data && response.data.video_id) {
         const videoId = response.data.video_id;
-        // videoId doğrudan dosya adı olarak kullanılıyor
-        console.log('Stream için video ID alındı:', videoId);
-        const newStreamUrl = `http://localhost:8000/livestream/?source_type=video&source_id=${videoId}`;
-        console.log('Stream URL ayarlandı:', newStreamUrl);
+        // göreceli URL kullan
+        const newStreamUrl = `/livestream/?source_type=video&source_id=${videoId}`;
         setStreamUrl(newStreamUrl);
+        console.log('Stream URL ayarlandı:', newStreamUrl);
         
-          // Önemli: Biraz bekle ve sonra stream'i başlat
-            setTimeout(() => {
-              startStream();
-            }, 1000); // 1 saniye bekle
-          } else {
+        // Önemli: Biraz bekle ve sonra stream'i başlat
+        setTimeout(() => {
+          startStream();
+        }, 1000); // 1 saniye bekle
+        } else {
           setError('Video yüklendi ancak ID alınamadı.');
         }
       } catch (error) {
@@ -245,22 +297,55 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
           </div>
         ) : isStreaming ? (
           <>
-            <img 
-              ref={streamRef}
-              className="stream-image" 
-              src={streamUrl}
-              alt={videoSource === 'camera' ? "Canlı Kamera Akışı" : "Video Akışı"}
-              onError={(e) => {
-                console.error("Görüntü yükleme hatası:", e);
-                setError("Görüntü akışı yüklenemedi. Sunucu bağlantısını kontrol edin.");
-              }} 
-            />
+            {useAltMode ? (
+              // Alternatif mod için
+              <img 
+                className="stream-image" 
+                src={frameUrl}
+                alt={videoSource === 'camera' ? "Canlı Kamera Kar Akışı" : "Video Kare Akışı"}
+                onError={(e) => {
+                  console.error("Alternatif mod görüntü hatası:", e);
+                  setError("Görüntü yüklenemedi. Yönetici haklarını kontrol edin.");
+                }} 
+              />
+            ) : (
+              // Normal MJPEG akış modu için
+              <img 
+                ref={streamRef}
+                className="stream-image" 
+                src={streamUrl}
+                alt={videoSource === 'camera' ? "Canlı Kamera Akışı" : "Video Akışı"}
+                onError={(e) => {
+                  console.error("Görüntü yükleme hatası:", e);
+                  setError("Görüntü akışı yüklenemedi. Alternatif modu deneyebilirsiniz.");
+                  // Eğer normal mod başarısız olursa, alternatif modu öner
+                  setUseAltMode(true);
+                }} 
+              />
+            )}
             <div className="debug-info">
-              <p>Stream URL: {streamUrl}</p>
+              <p>Stream Mod: {useAltMode ? 'Alternatif (kare bazlı)' : 'Normal (MJPEG)'}</p>
+              <p>Stream URL: {useAltMode ? frameUrl : streamUrl}</p>
               <p>Stream durumu: {isStreaming ? 'Aktif' : 'Durduruldu'}</p>
+              <button 
+                className="mode-toggle-button"
+                onClick={() => {
+                  // Akış modunu değiştir
+                  setUseAltMode(!useAltMode);
+                  console.log("Akış modu değiştirildi:", !useAltMode ? 'Alternatif' : 'Normal');
+                  // Mevcut akışı durdur ve yeni modda yeniden başlat
+                  stopStream();
+                  setTimeout(() => startStream(), 500);
+                }}
+              >
+                {useAltMode ? 'Normal Moda Geç' : 'Alternatif Moda Geç'}
+              </button>
               <button onClick={() => {
-                console.log("Stream URL:", streamUrl);
-                console.log("Stream durumu:", isStreaming ? 'Aktif' : 'Durduruldu');
+                console.log("Stream bilgileri:", {
+                  mod: useAltMode ? 'Alternatif' : 'Normal', 
+                  url: useAltMode ? frameUrl : streamUrl,
+                  durum: isStreaming ? 'Aktif' : 'Durduruldu'
+                });
               }}>Hata Ayıklama Bilgisi</button>
             </div>
           </>

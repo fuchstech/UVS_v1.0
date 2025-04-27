@@ -187,6 +187,15 @@ input:checked + .slider:before {
   cursor: pointer;
   font-size: 12px;
   margin-top: 5px;
+  margin-right: 5px;
+}
+
+.mode-toggle-button {
+  background-color: #28a745 !important;
+  font-weight: bold;
+  display: block;
+  width: 100%;
+  margin-bottom: 10px;
 }
 
 .no-stream {
