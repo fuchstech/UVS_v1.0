@@ -158,6 +158,10 @@ const EquipmentControl = () => {
             onClick={() => {
               setProcessingMode('video');
               setShowLivestream(false);
+              // Video modu seçildiğinde canlı akışı durdur
+              fetch('http://localhost:8000/livestream/', {
+                method: 'DELETE',
+              }).catch(err => console.error('Akış durdurma hatası:', err));
             }}
           >
             <i className="fas fa-file-video"></i> Video Yükleme
@@ -167,6 +171,8 @@ const EquipmentControl = () => {
             onClick={() => {
               setProcessingMode('livestream');
               setShowLivestream(true);
+              // Canlı kamera moduna geçerken önceki video analiz sonuçlarını temizle
+              setAnalysisResults(null);
             }}
           >
             <i className="fas fa-video"></i> Canlı Kamera
