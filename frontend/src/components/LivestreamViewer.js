@@ -24,6 +24,7 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
     return () => {
       stopStream();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cameraId, videoSource]);
 
   const startStream = () => {
@@ -135,14 +136,18 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
         
         // Video ID'sini al ve URL'yi ayarla
         if (response.data && response.data.video_id) {
-          const videoId = response.data.video_id;
-          const newStreamUrl = `http://localhost:8000/livestream/?source_type=video&source_id=${videoId}`;
-          setStreamUrl(newStreamUrl);
-          console.log('Stream URL ayarlandı:', newStreamUrl);
-          
-          // Video hazır olduğunda stream'i başlat
-          startStream();
-        } else {
+        const videoId = response.data.video_id;
+        // videoId doğrudan dosya adı olarak kullanılıyor
+        console.log('Stream için video ID alındı:', videoId);
+        const newStreamUrl = `http://localhost:8000/livestream/?source_type=video&source_id=${videoId}`;
+        console.log('Stream URL ayarlandı:', newStreamUrl);
+        setStreamUrl(newStreamUrl);
+        
+          // Önemli: Biraz bekle ve sonra stream'i başlat
+            setTimeout(() => {
+              startStream();
+            }, 1000); // 1 saniye bekle
+          } else {
           setError('Video yüklendi ancak ID alınamadı.');
         }
       } catch (error) {
@@ -169,17 +174,17 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
       <div className="livestream-header">
         <h3>Gerçek Zamanlı Baret Tespiti</h3>
         <div className="source-selector">
-        <label className="switch">
-        <input
-        type="checkbox"
-        checked={videoSource === 'video'}
-        onChange={() => {
-        if (isStreaming) stopStream();
-        // Geçiş yapılırken stream'i sıfırla
-          setStreamUrl('');
-            setVideoSource(videoSource === 'camera' ? 'video' : 'camera');
-                }}
-              />
+          <label className="switch">
+            <input
+              type="checkbox"
+              checked={videoSource === 'video'}
+              onChange={() => {
+                if (isStreaming) stopStream();
+                // Geçiş yapılırken stream'i sıfırla
+                setStreamUrl('');
+                setVideoSource(videoSource === 'camera' ? 'video' : 'camera');
+              }}
+            />
             <span className="slider round"></span>
           </label>
           <span className="source-label">{videoSource === 'camera' ? 'Kamera' : 'Video'}</span>

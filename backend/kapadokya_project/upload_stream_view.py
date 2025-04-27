@@ -48,6 +48,8 @@ class UploadStreamVideoView(APIView):
             video_path = default_storage.save(save_path, ContentFile(video_file.read()))
             
             print(f"UPLOAD STREAM: Video dosyası stream için kaydedildi: {video_path}")
+            # Tam dosya yolunu göster
+            print(f"UPLOAD STREAM: Tam dosya yolu: {default_storage.path(video_path)}")
             
             # Başarılı yanıt
             return Response({

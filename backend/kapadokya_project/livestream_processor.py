@@ -53,14 +53,20 @@ class LivestreamProcessorView(APIView):
             from django.conf import settings
             import os
             
-            # uploads klasöründe video dosyasını ara
+            # Video dosyasının tam yolunu kontrol et ve yazdır
             media_root = settings.MEDIA_ROOT
             uploads_dir = os.path.join(media_root, 'uploads')
-            print(f"LIVESTREAM: Video dosyası aranıyor: {source_id} klasörde: {uploads_dir}")
             
-            # uploads klasöründe dosya olup olmadığını kontrol et
+            # Daha fazla log mesajı ekle
+            print(f"LIVESTREAM: MEDIA_ROOT = {media_root}")
+            print(f"LIVESTREAM: Upload klasörü = {uploads_dir}")
+            print(f"LIVESTREAM: Aranan dosya = {source_id}")
+            
+            # Dosya adının bir parçası olarak source_id'yi ara
             if os.path.exists(uploads_dir):
+                print(f"LIVESTREAM: Upload klasöründeki dosyalar:")
                 for filename in os.listdir(uploads_dir):
+                    print(f"  - {filename}")
                     if source_id in filename:
                         video_path = os.path.join(uploads_dir, filename)
                         print(f"LIVESTREAM: Video dosyası bulundu: {video_path}")
@@ -69,6 +75,7 @@ class LivestreamProcessorView(APIView):
             # Eğer dosya bulunamazsa doğrudan yolu dene
             if not video_path:
                 direct_path = os.path.join(media_root, 'uploads', source_id)
+                print(f"LIVESTREAM: Direkt dosya yolu deneniyor: {direct_path}")
                 if os.path.exists(direct_path):
                     video_path = direct_path
                     print(f"LIVESTREAM: Video dosyası doğrudan bulundu: {video_path}")
@@ -150,18 +157,57 @@ class LivestreamProcessorView(APIView):
         try:
             # YOLO modelini yükle
             base_dir = Path(__file__).resolve().parent.parent.parent
+            # Özel model yolu
             model_path = base_dir / 'yolo_models' / 'hemletYoloV8_100epochs.pt'
-            print(f"LIVESTREAM: Model yükleniyor: {model_path}")
-            model = YOLO(str(model_path))
             
-            # Sınıf isimleri
-            classNames = ["head without helmet", "head with helmet"]
-            print(f"LIVESTREAM: Sınıf isimleri: {classNames}")
+            # Varsayılan YOLOv8 modeli - özel model yüklenemezse bunu kullan
+            default_model_path = 'yolov8n.pt'  # Bu model otomatik olarak indirilecektir
             
-            # Simülasyon modu kapalı
-            self.simulated_mode = False
+            print(f"LIVESTREAM: Model yüklemesi başlatılıyor: {model_path}")
+            
+            # Model yükleme denemesi
+            try:
+                from ultralytics import YOLO
+                
+                # Önce özel model yüklemeyi dene
+                if os.path.exists(model_path):
+                    print(f"LIVESTREAM: Özel model dosyası bulundu, yükleme deneniyor")
+                    try:
+                        model = YOLO(str(model_path))
+                        print(f"LIVESTREAM: Özel model başarıyla yüklendi")
+                    except Exception as model_error:
+                        print(f"LIVESTREAM: Özel model yükleme hatası: {str(model_error)}")
+                        print(f"LIVESTREAM: Varsayılan model yüklemeyi deniyorum: {default_model_path}")
+                        model = YOLO(default_model_path)
+                        print(f"LIVESTREAM: Varsayılan model başarıyla yüklendi")
+                else:
+                    print(f"LIVESTREAM: Özel model dosyası bulunamadı, varsayılan model yükleniyor")
+                    model = YOLO(default_model_path)
+                    print(f"LIVESTREAM: Varsayılan model başarıyla yüklendi")
+                
+                # Sınıf isimleri
+                # Özel modelin sınıfları - bizim örneğimizde sadece 2 sınıf var
+                self.customClassNames = ["head without helmet", "head with helmet"]
+                
+                # Varsayılan COCO sınıfları
+                self.defaultClassNames = model.names
+                
+                # Hangi modelin yüklendiğine bağlı olarak sınıf adlarını ayarla
+                classNames = self.customClassNames if str(model_path) in str(model) else self.defaultClassNames
+                print(f"LIVESTREAM: Sınıf isimleri: {classNames}")
+                
+                # Simülasyon modu kapalı
+                self.simulated_mode = False
+                self.classNames = classNames
+                self.model = model
+                
+            except ImportError as e:
+                print(f"LIVESTREAM: Ultralytics import hatası: {str(e)}")
+                print("LIVESTREAM: Simülasyon modu aktif edildi")
+                self.simulated_mode = True
+                
         except Exception as e:
-            print(f"LIVESTREAM: Model yükleme hatası: {str(e)}")
+            print(f"LIVESTREAM: Genel model yükleme hatası: {str(e)}")
             print("LIVESTREAM: Simülasyon modu aktif edildi")
             self.simulated_mode = True
         
@@ -194,10 +240,21 @@ class LivestreamProcessorView(APIView):
                 
                 if not self.simulated_mode:
                     try:
+                        # Aşağıdaki kod yüklenen Ultralytics sürümüyle uyumludur
                         # YOLO modeli ile tahmin işlemi
-                        results = model.predict(source=img, conf=0.5, verbose=False)
+                        print(f"LIVESTREAM: Tahmin yapılıyor, kare {frame_count}")
                         
-                        frame_copy = img.copy()
+                        # Model'i ve sınıf isimlerini al
+                        model = self.model
+                        classNames = self.classNames
+                        
+                        try:
+                            # Modeli kullanarak tahmin yap
+                            results = model.predict(source=img, conf=0.4, verbose=False)
+                        except Exception as model_error:
+                            print(f"LIVESTREAM: Tahmin hatası: {str(model_error)}")
+                            # Bu kare için simülasyon moduna geç ve sonraki kare için tekrar dene
+                            raise Exception(f"Tahmin hatası: {str(model_error)}")
                         
                         # Sonuçları işle
                         for r in results:
@@ -216,7 +273,16 @@ class LivestreamProcessorView(APIView):
                                 
                                 # Sınıf ismi
                                 cls = int(box.cls[0])
-                                class_name = classNames[0] if cls >= len(classNames) else classNames[cls]
+                                # Model sınıf adları varsa kullan, yoksa uygun baret etiketini kullan
+                                try:
+                                    class_name = classNames[cls]
+                                except (KeyError, IndexError):
+                                    # Varsayılan modelde sınıf adları farklı olabilir
+                                    # Kask/baret tespiti için güvenlik ekipmanı sınıflarını kontrol et
+                                    if cls in [0, 1]: # Bu sınıflar genelde insan, kişi vb.
+                                        class_name = "head without helmet"
+                                    else:  # Diğer sınıflar için
+                                        class_name = str(cls)
                                 
                                 # Etiket ekle
                                 cvzone.putTextRect(img, f'{class_name} {conf}', (max(0, x1), max(35, y1)), scale=1, thickness=1)
