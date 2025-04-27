@@ -8,6 +8,10 @@ from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 from django.views.generic import RedirectView
 from .views import index, swagger_ui_view, static_swagger_view, static_redoc_view
+from .test_upload_view import SimpleVideoUploadView
+from .standalone_view import StandaloneVideoProcessor
+from .yolo_processor import YoloVideoProcessor
+from .livestream_processor import LivestreamProcessorView
 
 # Basitleştirilmiş Swagger şeması
 schema_view = get_schema_view(
@@ -22,6 +26,12 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('', index, name='index'),
     path('admin/', admin.site.urls),
+    
+    # Basit test endpoint'i
+    path('test-upload/', SimpleVideoUploadView.as_view(), name='simple-test-upload'),
+    path('standalone-video/', StandaloneVideoProcessor.as_view(), name='standalone-video-processor'),
+    path('yolo-video/', YoloVideoProcessor.as_view(), name='yolo-video-processor'),
+    path('livestream/', LivestreamProcessorView.as_view(), name='livestream-processor'),
     
     # API documentation
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),

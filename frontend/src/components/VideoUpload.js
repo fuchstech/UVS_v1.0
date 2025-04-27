@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import ApiService from '../services/ApiService';
 import './VideoUpload.css';
 
@@ -33,18 +34,13 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
       return;
     }
 
-    if (!cameraId) {
-      setUploadError('Kamera ID gerekli.');
-      return;
-    }
-
     setIsUploading(true);
     setUploadProgress(0);
     setUploadError(null);
 
     const formData = new FormData();
     formData.append('video', selectedFile);
-    formData.append('camera_id', cameraId);
+    formData.append('camera_id', cameraId || '1');  // Kamera ID yoksa varsayılan 1
     formData.append('sample_rate', sampleRate);
 
     try {
@@ -64,8 +60,9 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
       console.log('Video boyutu:', (selectedFile.size / (1024 * 1024)).toFixed(2), 'MB');
       
       try {
-        // API path düzgeltildi - 'api/' ön ekini ekle
-        const response = await ApiService.postFormData('api/isg/process-video/', formData);
+        // YOLO işlemcisini kullanacağız
+        const response = await axios.post('http://localhost:8000/yolo-video/', formData);
+        
         console.log('Video yükleme yanıtı:', response);
         
         clearInterval(progressInterval);
@@ -83,6 +80,7 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
         
         // Hata detaylarını elde et
         const errorMessage = error.response?.data?.detail || 
+                             error.response?.data?.error ||
                              error.message || 
                              'Video yüklenirken bir hata oluştu.';
                              
@@ -110,18 +108,13 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
       return;
     }
 
-    if (!cameraId) {
-      setUploadError('Kamera ID gerekli.');
-      return;
-    }
-
     setIsUploading(true);
     setUploadProgress(0);
     setUploadError(null);
 
     const formData = new FormData();
     formData.append('video', selectedFile);
-    formData.append('camera_id', cameraId);
+    formData.append('camera_id', cameraId || 1);  // Kamera ID yoksa varsayılan 1
 
     try {
       // Progress simulation
@@ -136,12 +129,17 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
         });
       }, 200);
 
-      console.log('TEST: Video yükleme isteği başladı. Kamera ID:', cameraId);
+      console.log('TEST: Video yükleme isteği başladı');
       console.log('TEST: Video boyutu:', (selectedFile.size / (1024 * 1024)).toFixed(2), 'MB');
       
       try {
-        // API path düzgeltildi - 'api/' ön ekini ekle
-        const response = await ApiService.postFormData('api/isg/test-upload/', formData);
+        // Kök URL'deki test-upload endpoint'ini kullan - daha basit bir yapılandırma
+        const response = await axios.post('http://localhost:8000/test-upload/', formData, {
+          headers: {
+            // Content-Type header'a gerek yok, axios otomatik olarak multipart/form-data olarak ayarlar
+          }
+        });
+        
         console.log('TEST: Başarılı yanıt:', response);
         
         clearInterval(progressInterval);
@@ -162,6 +160,7 @@ const VideoUpload = ({ cameraId, onUploadSuccess, onUploadError }) => {
         setIsUploading(false);
         
         const errorMessage = error.response?.data?.detail || 
+                             error.response?.data?.error ||
                              error.message || 
                              'TEST: Video yüklenirken bir hata oluştu.';
                              

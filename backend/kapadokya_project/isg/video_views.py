@@ -24,13 +24,16 @@ class ProcessVideoAPIView(APIView):
     
     def post(self, request, format=None):
         try:
-            logger.info("Video işleme isteği alındı")
-            logger.debug(f"Gelen veri: {request.data}")
+            logger.info("PROCESSING: Video işleme isteği alındı")
+            print("PROCESSING: Video işleme isteği alındı")
+            print(f"PROCESSING: Gelen veri: {request.data}")
+            print(f"PROCESSING: Gelen dosyalar: {request.FILES}")
             
             # Get camera ID from request
             camera_id = request.data.get('camera_id')
             if not camera_id:
-                logger.error("Kamera ID'si eksik")
+                logger.error("PROCESSING: Kamera ID'si eksik")
+                print("PROCESSING: Kamera ID'si eksik")
                 return Response(
                     {"detail": "Kamera ID'si gerekli."},
                     status=status.HTTP_400_BAD_REQUEST

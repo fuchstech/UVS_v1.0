@@ -43,7 +43,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'kapadokya_project.middleware.ApiKeyMiddleware',
+    # 'kapadokya_project.middleware.ApiKeyMiddleware',  # Geçici olarak devre dışı bırakıldı
 ]
 
 ROOT_URLCONF = 'kapadokya_project.urls'
