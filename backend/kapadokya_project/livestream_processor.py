@@ -46,33 +46,33 @@ class LivestreamProcessorView(APIView):
             
             # YOLO modelini yükle
             try:
-                from ultralytics import YOLO
-                
-                # Mevcut dizini kontrol et
-                base_dir = Path(__file__).resolve().parent.parent.parent
-                yolo_path = base_dir / 'yolo_models'
-                
-                # Modeli bul
-                model_paths = [
-                    yolo_path / 'hemletYoloV8_100epochs.pt',  # Verdiğiniz baret modeli
-                    yolo_path / 'isg_model.pt',  # ISG modeli 
-                    yolo_path / 'yolov8n.pt'     # Varsayılan model
-                ]
-                
-                model_file = None
-                for path in model_paths:
-                    if path.exists():
-                        model_file = str(path)
-                        print(f"LIVESTREAM: Model bulundu: {path}")
-                        break
-                
-                if model_file:
-                    self.model = YOLO(model_file)
-                    self.class_names = ["head without helmet","head with helmet"]  # Baret modeli sınıfları
-                    print(f"LIVESTREAM: Model yüklendi: {model_file}")
-                else:
-                    print("LIVESTREAM: Hiçbir model dosyası bulunamadı!")
-                    return Response({"error": "YOLO model dosyası bulunamadı"}, status=status.HTTP_404_NOT_FOUND)
+            import torch
+            from ultralytics import YOLO
+            # PyTorch 2.6 güvenlik kısıtlamalarını es geçmek için
+            try:
+                import ultralytics.nn.tasks
+                # Güvenli global'lere Ultralytics sınıflarını ekle
+                torch.serialization.add_safe_globals(['ultralytics.nn.tasks.DetectionModel'])
+            except (ImportError, AttributeError):
+            print("LIVESTREAM: Torch serialization modülü bulunamadı veya desteklenmiyor")
+            
+            # Alternatif model yükleme yöntemi
+            print("LIVESTREAM: Alternatif model yükleme metodu deneniyor.")
+            model_file = None
+            for path in model_paths:
+                if path.exists():
+                model_file = str(path)
+            print(f"LIVESTREAM: Model bulundu: {path}")
+            break
+            
+            if model_file:
+                # weights_only=False ile model yükleme
+            self.model = YOLO(model_file)
+            self.class_names = ["head without helmet","head with helmet"]  # Baret modeli sınıfları
+            print(f"LIVESTREAM: Model yüklendi: {model_file}")
+            else:
+            print("LIVESTREAM: Hiçbir model dosyası bulunamadı!")
+            return Response({"error": "YOLO model dosyası bulunamadı"}, status=status.HTTP_404_NOT_FOUND)
                     
             except ImportError as e:
                 print(f"LIVESTREAM: YOLO modülü yüklenemedi - {str(e)}")

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ApiService from '../../services/ApiService';
 import VideoUpload from '../../components/VideoUpload';
 import VideoAnalysisResults from '../../components/VideoAnalysisResults';
+import LivestreamViewer from '../../components/LivestreamViewer';
 import './isg.css';
 
 const EquipmentControl = () => {
@@ -10,6 +11,8 @@ const EquipmentControl = () => {
   const [error, setError] = useState('');
   const [analysisResults, setAnalysisResults] = useState(null);
   const [activeCamera, setActiveCamera] = useState(1); // Varsayılan kamera ID'si
+  const [showLivestream, setShowLivestream] = useState(false); // Canlı akış görüntüleme durumu
+  const [processingMode, setProcessingMode] = useState('video'); // 'video' veya 'livestream'
 
   useEffect(() => {
     // Gerçek API'ye bağlanmak yerine simüle edilmiş veri kullanıyoruz
@@ -146,20 +149,55 @@ const EquipmentControl = () => {
       </div>
       
       <div className="video-analysis-section">
-        <h3>Ekipman Tespiti için Video Analizi</h3>
+        <h3>Ekipman Tespiti</h3>
+        
+        {/* İşleme modu seçici */}
+        <div className="processing-mode-selector">
+          <button 
+            className={`mode-button ${processingMode === 'video' ? 'active' : ''}`}
+            onClick={() => {
+              setProcessingMode('video');
+              setShowLivestream(false);
+            }}
+          >
+            <i className="fas fa-file-video"></i> Video Yükleme
+          </button>
+          <button 
+            className={`mode-button ${processingMode === 'livestream' ? 'active' : ''}`}
+            onClick={() => {
+              setProcessingMode('livestream');
+              setShowLivestream(true);
+            }}
+          >
+            <i className="fas fa-video"></i> Canlı Kamera
+          </button>
+        </div>
+        
         <p className="section-description">
-          Bu bölümde, bilgisayarınızdan yükleyeceğiniz video dosyasındaki ekipman kullanımını analiz edebilirsiniz.
-          Sistem, çalışanların gerekli güvenlik ekipmanlarını kullanıp kullanmadığını tespit eder.
+          {processingMode === 'video' ? (
+            "Video yükleme modunda, bilgisayarınızdan yüklediğiniz video dosyasındaki ekipman kullanımını analiz edebilirsiniz."
+          ) : (
+            "Canlı kamera modunda, webcam veya IP kamera üzerinden gerçek zamanlı baret tespiti yapabilirsiniz."
+          )}
         </p>
         
-        <VideoUpload 
-          cameraId={activeCamera}
-          onUploadSuccess={(data) => setAnalysisResults(data)}
-          onUploadError={(err) => setError(err)}
-        />
-        
-        {analysisResults && (
-          <VideoAnalysisResults resultData={analysisResults} />
+        {processingMode === 'video' ? (
+          <>
+            <VideoUpload 
+              cameraId={activeCamera}
+              onUploadSuccess={(data) => setAnalysisResults(data)}
+              onUploadError={(err) => setError(err)}
+            />
+            
+            {analysisResults && (
+              <VideoAnalysisResults resultData={analysisResults} />
+            )}
+          </>
+        ) : (
+          <LivestreamViewer 
+            cameraId={0 /* 0 genellikle varsayılan webcam */}  
+            onClose={() => setShowLivestream(false)}
+          />
         )}
       </div>
       
