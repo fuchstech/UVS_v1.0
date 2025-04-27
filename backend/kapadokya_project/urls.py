@@ -13,6 +13,7 @@ from .standalone_view import StandaloneVideoProcessor
 from .yolo_processor import YoloVideoProcessor
 from .livestream_processor import LivestreamProcessorView
 from .livestream_processor_simple import LivestreamProcessorSimpleView
+from .upload_stream_view import UploadStreamVideoView
 
 # Basitleştirilmiş Swagger şeması
 schema_view = get_schema_view(
@@ -34,6 +35,7 @@ urlpatterns = [
     path('yolo-video/', YoloVideoProcessor.as_view(), name='yolo-video-processor'),
     path('livestream/', LivestreamProcessorView.as_view(), name='livestream-processor'),
     path('livestream-simple/', LivestreamProcessorSimpleView.as_view(), name='livestream-simple'),
+    path('upload-stream-video/', UploadStreamVideoView.as_view(), name='upload-stream-video'),
     
     # API documentation
     path('swagger.json', schema_view.without_ui(cache_timeout=0), name='schema-json'),
