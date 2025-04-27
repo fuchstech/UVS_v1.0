@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import SafetyEquipmentViewSet, SafetyViolationViewSet, SafetyReportViewSet, ProcessImageAPIView
+from .views import SafetyEquipmentViewSet, SafetyViolationViewSet, SafetyReportViewSet, ProcessImageAPIView, HeatMapViewSet, PersonTrackingDataViewSet
 from .video_views import ProcessVideoAPIView
 from .test_views import VideoUploadTestView
 from .simplified_video_view import SimplifiedVideoProcessorView
@@ -9,6 +9,8 @@ router = DefaultRouter()
 router.register(r'equipment', SafetyEquipmentViewSet)
 router.register(r'violations', SafetyViolationViewSet)
 router.register(r'reports', SafetyReportViewSet)
+router.register(r'heatmaps', HeatMapViewSet)
+router.register(r'tracking-data', PersonTrackingDataViewSet)
 
 urlpatterns = [
     path('', include(router.urls)),

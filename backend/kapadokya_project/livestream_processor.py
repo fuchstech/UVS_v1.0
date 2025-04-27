@@ -387,8 +387,7 @@ class LivestreamProcessorView(APIView):
                                     except Exception as tracking_error:
                                         print(f"LIVESTREAM: Kişi takip hatası: {str(tracking_error)}")
                                     
-                                # Tespitler ve renk bilgisini kaydet
-                                # Kişi hareket verilerini kaydet (simülasyon modu için)
+                            # Kişi hareket verilerini kaydet (simülasyon modu için)
                             if TRACKING_ENABLED and self.camera_id and frame_count % self.tracking_interval == 0:
                                 try:
                                     # Tespit edilen kişinin merkez noktasını hesapla

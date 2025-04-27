@@ -45,15 +45,16 @@ const Sidebar = ({ user }) => {
           <li><NavLink to="/isg/equipment"><i className="fas fa-hard-hat"></i> Ekipman Kontrolü</NavLink></li>
           <li><NavLink to="/isg/danger-zones"><i className="fas fa-exclamation-triangle"></i> Tehlikeli Alan</NavLink></li>
           <li><NavLink to="/isg/worker-safety"><i className="fas fa-user-shield"></i> İşçi Güvenliği</NavLink></li>
+          <li><NavLink to="/isg/movement-heatmap"><i className="fas fa-fire"></i> Hareket Haritası</NavLink></li>
         </ul>
       </div>
       
       <div className="sidebar-section">
         <h3>Verimlilik</h3>
         <ul className="submenu">
-          <li><a href="#"><i className="fas fa-user-clock"></i> İşçi Takibi</a></li>
-          <li><a href="#"><i className="fas fa-map"></i> Hareket Haritası</a></li>
-          <li><a href="#"><i className="fas fa-chart-line"></i> Verimlilik Analizi</a></li>
+          <li><NavLink to="#"><i className="fas fa-user-clock"></i> İşçi Takibi</NavLink></li>
+          <li><NavLink to="/isg/movement-heatmap"><i className="fas fa-map"></i> Hareket Haritası</NavLink></li>
+          <li><NavLink to="#"><i className="fas fa-chart-line"></i> Verimlilik Analizi</NavLink></li>
         </ul>
       </div>
       

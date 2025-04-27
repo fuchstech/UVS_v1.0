@@ -17,6 +17,7 @@ import NotFound from './pages/NotFound';
 import EquipmentControl from './pages/isg/EquipmentControl';
 import DangerZones from './pages/isg/DangerZones';
 import WorkerSafety from './pages/isg/WorkerSafety';
+import MovementHeatmap from './pages/isg/MovementHeatmap';
 
 // API Service
 import AuthService from './services/AuthService';
@@ -129,6 +130,12 @@ function App() {
             <Route path="/isg/worker-safety" element={
               <ProtectedRoute>
                 <WorkerSafety />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/isg/movement-heatmap" element={
+              <ProtectedRoute>
+                <MovementHeatmap />
               </ProtectedRoute>
             } />
             

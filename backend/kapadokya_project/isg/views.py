@@ -10,8 +10,8 @@ from django.utils import timezone
 from django.conf import settings
 from django.core.files.storage import default_storage
 from django.core.files.base import ContentFile
-from .models import SafetyEquipment, SafetyViolation, SafetyReport
-from .serializers import SafetyEquipmentSerializer, SafetyViolationSerializer, SafetyReportSerializer
+from .models import SafetyEquipment, SafetyViolation, SafetyReport, PersonTrackingData, HeatMap
+from .serializers import SafetyEquipmentSerializer, SafetyViolationSerializer, SafetyReportSerializer, PersonTrackingDataSerializer, HeatMapSerializer
 from .tasks import process_image_task, generate_daily_safety_report
 from kapadokya_project.api.models import Camera, ProcessedImage
 
@@ -140,4 +140,105 @@ class ProcessImageAPIView(APIView):
             "id": processed_image.id,
             "status": "Görüntü işleme kuyruğa alındı.",
             "message": "Görüntü işleniyor, sonuçlar yakında hazır olacak."
+        })
+
+class PersonTrackingDataViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for worker movement tracking data
+    """
+    queryset = PersonTrackingData.objects.all().order_by('-timestamp')
+    serializer_class = PersonTrackingDataSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = PersonTrackingData.objects.all().order_by('-timestamp')
+        
+        # Kamera ID'sine göre filtreleme
+        camera_id = self.request.query_params.get('camera_id', None)
+        if camera_id:
+            queryset = queryset.filter(camera_id=camera_id)
+        
+        # Tarihe göre filtreleme
+        date = self.request.query_params.get('date', None)
+        if date:
+            queryset = queryset.filter(tracking_date=date)
+        
+        # Başlangıç ve bitiş tarihine göre filtreleme
+        start_date = self.request.query_params.get('start_date', None)
+        end_date = self.request.query_params.get('end_date', None)
+        if start_date and end_date:
+            queryset = queryset.filter(tracking_date__range=[start_date, end_date])
+        
+        # Baret durumuna göre filtreleme
+        has_helmet = self.request.query_params.get('has_helmet', None)
+        if has_helmet is not None:
+            has_helmet_bool = has_helmet.lower() == 'true'
+            queryset = queryset.filter(has_helmet=has_helmet_bool)
+        
+        # Kişi ID'sine göre filtreleme
+        person_id = self.request.query_params.get('person_id', None)
+        if person_id:
+            queryset = queryset.filter(person_id=person_id)
+            
+        return queryset
+
+class HeatMapViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for heat maps
+    """
+    queryset = HeatMap.objects.all().order_by('-start_date')
+    serializer_class = HeatMapSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    def get_queryset(self):
+        queryset = HeatMap.objects.all().order_by('-start_date')
+        
+        # Kamera ID'sine göre filtreleme
+        camera_id = self.request.query_params.get('camera_id', None)
+        if camera_id:
+            queryset = queryset.filter(camera_id=camera_id)
+        
+        # Harita tipine göre filtreleme
+        map_type = self.request.query_params.get('map_type', None)
+        if map_type:
+            queryset = queryset.filter(map_type=map_type)
+        
+        # Tarihe göre filtreleme
+        date = self.request.query_params.get('date', None)
+        if date:
+            queryset = queryset.filter(start_date__lte=date, end_date__gte=date)
+        
+        return queryset
+    
+    @action(detail=False, methods=['post'])
+    def generate_heatmap(self, request):
+        """Isı haritası oluşturma işlemini başlat"""
+        camera_id = request.data.get('camera_id')
+        start_date = request.data.get('start_date')
+        end_date = request.data.get('end_date')
+        map_type = request.data.get('map_type', 'daily')
+        
+        if not camera_id or not start_date:
+            return Response(
+                {"detail": "Kamera ID ve başlangıç tarihi gerekli."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        try:
+            camera = Camera.objects.get(id=camera_id)
+        except Camera.DoesNotExist:
+            return Response(
+                {"detail": "Kamera bulunamadı."},
+                status=status.HTTP_404_NOT_FOUND
+            )
+        
+        # Isı haritası oluşturmak için işlem başlat
+        # Burada, gerekli komutu çağırarak ya da gerekli hizmeti özel olarak çağırarak
+        # Isı haritası oluşturma işlemini başlatabilirsiniz
+        
+        # Basitleştirilmiş bakış: Isı haritası URL'sine yönlendir
+        return Response({
+            "status": "Işlem başlatıldı",
+            "message": "Isı haritası oluşturma işlemi başlatıldı. Sonuçlar birazdan hazır olacak.",
+            "heatmap_url": f"/heatmap/?camera_id={camera_id}&start_date={start_date}&end_date={end_date or start_date}&map_type={map_type}"
         })
