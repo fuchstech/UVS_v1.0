@@ -15,6 +15,16 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
+from django.utils import timezone
+
+# Kişi takibi için gerekli model ve serializerlar
+try:
+    from .isg.models import PersonTrackingData
+    from .api.models import Camera
+    TRACKING_ENABLED = True
+except ImportError:
+    print("LIVESTREAM: PersonTrackingData modeli bulunamadı, hareket takibi devre dışı bırakılacak")
+    TRACKING_ENABLED = False
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -31,6 +41,8 @@ class LivestreamProcessorView(APIView):
         self.frame_count = 0
         self.model = None
         self.lock = threading.Lock()
+        self.camera_id = None  # Kamera ID'si takip için eklendi
+        self.tracking_interval = 10  # Her 10 karede bir hareket verisini kaydet
     
     def get(self, request):
         """Video akışını başlat"""
@@ -57,6 +69,21 @@ class LivestreamProcessorView(APIView):
         
         # Kamera indeksi veya yüklenen video ID
         source_id = request.query_params.get('source_id', '0')
+        
+        # Kamera ID'sini kaydet - hareket takibi için
+        self.camera_id = request.query_params.get('camera_id')
+        
+        # Eğer kamera ID'si yoksa, kayıtlı bir kamera olup olmadığını kontrol et
+        if TRACKING_ENABLED and not self.camera_id and source_type == 'camera':
+            try:
+                # source_id'yi kamera indeksi olarak kullan
+                # NOT: Burada varsayılan olarak ilk bulunan kamerayı kullanıyoruz
+                cameras = Camera.objects.all()
+                if cameras.exists():
+                    self.camera_id = str(cameras.first().id)
+                    print(f"LIVESTREAM: Kamera ID otomatik olarak belirlendi: {self.camera_id}")
+            except Exception as e:
+                print(f"LIVESTREAM: Kamera ID belirleme hatası: {str(e)}")
         
         # Eğer kamera kaynağı ise, sayısal indekse çevir
         if source_type == 'camera':
@@ -327,8 +354,74 @@ class LivestreamProcessorView(APIView):
                                                  scale=1, thickness=1,
                                                  colorR=color, colorT=(255,255,255))
                                 
+                                # Kişi tespit verilerini kaydet (person sınıfı veya helmet ile ilgili sınıflar için)
+                                if class_name in ['person', 'head with helmet', 'head without helmet'] and TRACKING_ENABLED and self.camera_id and frame_count % self.tracking_interval == 0:
+                                    try:
+                                        # Tespit edilen kişinin merkez noktasını hesapla
+                                        center_x = (x1 + x2) / 2
+                                        center_y = (y1 + y2) / 2
+                                        
+                                        # Güven değeri ve baret durumu
+                                        has_helmet = 'with helmet' in class_name
+                                        
+                                        # Kişi ID'si - basit bir yaklaşımla şu anda sadece bir şey
+                                        person_id = 1  # İleri düzeyde geliştirilecek daha sofistike bir takip sistemi
+                                        
+                                        # Hareket verisini kaydet
+                                        try:
+                                            camera = Camera.objects.get(id=self.camera_id)
+                                            PersonTrackingData.objects.create(
+                                                camera=camera,
+                                                tracking_date=timezone.now().date(),
+                                                position_x=float(center_x),
+                                                position_y=float(center_y),
+                                                person_id=person_id,
+                                                has_helmet=has_helmet,
+                                                confidence=float(conf),
+                                                frame_number=frame_count
+                                            )
+                                            print(f"LIVESTREAM: Hareket verisi kaydedildi: (x:{center_x}, y:{center_y})")
+                                        except Exception as db_error:
+                                            print(f"LIVESTREAM: Hareket verisi kaydetme hatası: {str(db_error)}")
+                                            
+                                    except Exception as tracking_error:
+                                        print(f"LIVESTREAM: Kişi takip hatası: {str(tracking_error)}")
+                                    
                                 # Tespitler ve renk bilgisini kaydet
-                                detections.append({
+                                # Kişi hareket verilerini kaydet (simülasyon modu için)
+                            if TRACKING_ENABLED and self.camera_id and frame_count % self.tracking_interval == 0:
+                                try:
+                                    # Tespit edilen kişinin merkez noktasını hesapla
+                                    center_x = x + w/2
+                                    center_y = y + h/2
+                                    
+                                    # Güven değeri ve baret durumu
+                                    has_helmet = "with helmet" in class_name
+                                    
+                                    # Kişi ID'si - basit bir yaklaşımla şu anda sadece indeks kullanıyoruz
+                                    person_id = i + 1
+                                    
+                                    # Hareket verisini kaydet
+                                    try:
+                                        camera = Camera.objects.get(id=self.camera_id)
+                                        PersonTrackingData.objects.create(
+                                            camera=camera,
+                                            tracking_date=timezone.now().date(),
+                                            position_x=float(center_x),
+                                            position_y=float(center_y),
+                                            person_id=person_id,
+                                            has_helmet=has_helmet,
+                                            confidence=float(conf),
+                                            frame_number=frame_count
+                                        )
+                                        print(f"LIVESTREAM: Simülasyon - Hareket verisi kaydedildi: (x:{center_x}, y:{center_y})")
+                                    except Exception as db_error:
+                                        print(f"LIVESTREAM: Simülasyon - Hareket verisi kaydetme hatası: {str(db_error)}")
+                                        
+                                except Exception as tracking_error:
+                                    print(f"LIVESTREAM: Simülasyon - Kişi takip hatası: {str(tracking_error)}")
+                            
+                            detections.append({
                                     'class': class_name,
                                     'confidence': round(float(conf), 2),
                                     'box': [int(x1), int(y1), int(x2), int(y2)],

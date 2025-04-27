@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+import json
 from kapadokya_project.api.models import Camera, Zone, ProcessedImage
 
 class SafetyEquipment(models.Model):
@@ -48,3 +49,45 @@ class SafetyReport(models.Model):
 
     class Meta:
         ordering = ['-report_date']
+
+class PersonTrackingData(models.Model):
+    """Çalışanların hareket ve konumlarını takip eden model"""
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, related_name='tracking_data')
+    timestamp = models.DateTimeField(auto_now_add=True)
+    tracking_date = models.DateField()
+    position_x = models.FloatField(help_text="Kişinin X koordinatı")
+    position_y = models.FloatField(help_text="Kişinin Y koordinatı")
+    has_helmet = models.BooleanField(default=False, help_text="Baret takıp takmadığı")
+    person_id = models.IntegerField(help_text="Takip edilen kişinin ID'si", null=True)
+    confidence = models.FloatField(default=0.0)
+    frame_number = models.IntegerField(default=0)
+    
+    def __str__(self):
+        return f"Kişi {self.person_id} - {self.timestamp}"
+    
+    class Meta:
+        ordering = ['camera', 'timestamp']
+
+class HeatMap(models.Model):
+    """Günlük, haftalık veya aylık olarak oluşturulan ısı haritaları"""
+    camera = models.ForeignKey(Camera, on_delete=models.CASCADE, related_name='heat_maps')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    map_type = models.CharField(max_length=20, choices=(
+        ('daily', 'Günlük'),
+        ('weekly', 'Haftalık'),
+        ('monthly', 'Aylık'),
+    ))
+    heat_map_data = models.JSONField(help_text="Isı haritası verisi JSON formatında")
+    generated_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return f"{self.get_map_type_display()} Isı Haritası - {self.start_date}"
+    
+    def get_data(self):
+        """JSON formatındaki ısı haritası verisini döndürür"""
+        return json.loads(self.heat_map_data) if isinstance(self.heat_map_data, str) else self.heat_map_data
+    
+    class Meta:
+        ordering = ['-start_date']
+        unique_together = ['camera', 'start_date', 'end_date', 'map_type']
