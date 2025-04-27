@@ -244,12 +244,26 @@ const LivestreamViewer = ({ onClose, cameraId = 0 }) => {
             )}
           </div>
         ) : isStreaming ? (
-          <img 
-            ref={streamRef}
-            className="stream-image" 
-            src={streamUrl}
-            alt={videoSource === 'camera' ? "Canlı Kamera Akışı" : "Video Akışı"} 
-          />
+          <>
+            <img 
+              ref={streamRef}
+              className="stream-image" 
+              src={streamUrl}
+              alt={videoSource === 'camera' ? "Canlı Kamera Akışı" : "Video Akışı"}
+              onError={(e) => {
+                console.error("Görüntü yükleme hatası:", e);
+                setError("Görüntü akışı yüklenemedi. Sunucu bağlantısını kontrol edin.");
+              }} 
+            />
+            <div className="debug-info">
+              <p>Stream URL: {streamUrl}</p>
+              <p>Stream durumu: {isStreaming ? 'Aktif' : 'Durduruldu'}</p>
+              <button onClick={() => {
+                console.log("Stream URL:", streamUrl);
+                console.log("Stream durumu:", isStreaming ? 'Aktif' : 'Durduruldu');
+              }}>Hata Ayıklama Bilgisi</button>
+            </div>
+          </>
         ) : (
           <div className="no-stream">
             {error ? (

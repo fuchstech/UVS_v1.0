@@ -1,4 +1,44 @@
-"""
+class LivestreamFrameAPIView(APIView):
+    """
+    Tek kare resim olarak görüntü veren API
+    Bu API, MJPEG akışı sorunlarında alternatif olarak kullanılabilir
+    """
+    def __init__(self):
+        super().__init__()
+        # Ana stream sınıfının örneği
+        self.processor = None
+        
+    def get(self, request):
+        # Global bir yönetici sınıfı olarak LivestreamProcessorView'in son örneğini kullan
+        global stream_processor_instance
+        
+        if not stream_processor_instance or not stream_processor_instance.is_processing:
+            return JsonResponse({
+                "error": "Stream aktif değil. Önce /livestream/ endpoint'ine istek yapın."
+            }, status=400)
+        
+        # Aktif işlemciden son kareyi al
+        try:
+            with stream_processor_instance.lock:
+                if stream_processor_instance.last_frame is not None:
+                    # Resmi base64 formatına dönüştür
+                    _, buffer = cv2.imencode('.jpg', stream_processor_instance.last_frame)
+                    jpg_as_text = base64.b64encode(buffer).decode('utf-8')
+                    
+                    # JSON yanıtı
+                    return JsonResponse({
+                        "image": jpg_as_text,
+                        "format": "base64",
+                        "timestamp": time.time(),
+                        "detections": stream_processor_instance.detections
+                    })
+                else:
+                    return JsonResponse({"error": "Henüz görüntü yok"}, status=404)
+        except Exception as e:
+            return JsonResponse({"error": f"Frame alınamadı: {str(e)}"}, status=500)
+
+# Global referans
+stream_processor_instance = None"""
 Canlı video akışı işleme modülü - kameradan görüntü alıp işler
 """
 import cv2
@@ -9,7 +49,8 @@ import numpy as np
 import threading
 import base64
 from pathlib import Path
-from django.http import StreamingHttpResponse, JsonResponse
+from django.http import StreamingHttpResponse, JsonResponse, HttpResponse
+import base64
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -33,6 +74,16 @@ class LivestreamProcessorView(APIView):
     
     def get(self, request):
         """Video akışını başlat"""
+        # Cache ve buffer ayarlarını uygun hale getir
+        response = StreamingHttpResponse(
+            streaming_content=self._generate_frames(),
+            content_type='multipart/x-mixed-replace; boundary=frame'
+        )
+        # Buffer'lama yapmayı engelle, canlı stream için önemli
+        response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response['Pragma'] = 'no-cache'
+        response['Expires'] = '0'
+
         # Kaynak tipini belirle: kamera veya yüklenen video
         source_type = request.query_params.get('source_type', 'camera')
         
@@ -133,8 +184,8 @@ class LivestreamProcessorView(APIView):
             processing_thread.daemon = True
             processing_thread.start()
             
-            # SSE (Server-Sent Events) yanıtı döndür
-            return StreamingHttpResponse(self._generate_frames(), content_type='multipart/x-mixed-replace; boundary=frame')
+            print("LIVESTREAM: Streaming başlatılıyor")
+            return response
             
         except Exception as e:
             print(f"LIVESTREAM hata: {str(e)}")
@@ -186,8 +237,8 @@ class LivestreamProcessorView(APIView):
                     print(f"LIVESTREAM: Varsayılan model başarıyla yüklendi")
                 
                 # Sınıf isimleri
-                # Özel modelin sınıfları - bizim örneğimizde sadece 2 sınıf var
-                self.customClassNames = ["head without helmet", "head with helmet"]
+                # Özel modelin gerçek sınıfları
+                self.customClassNames = {0: 'head without helmet', 1: 'head with helmet', 2: 'person'}
                 
                 # Varsayılan COCO sınıfları
                 self.defaultClassNames = model.names
@@ -265,33 +316,55 @@ class LivestreamProcessorView(APIView):
                                 x1, y1, x2, y2 = int(x1), int(y1), int(x2), int(y2)
                                 w, h = x2 - x1, y2 - y1
                                 
-                                # Dikdörtgen ve etiket çizimi için cvzone kullan
-                                cvzone.cornerRect(img, (x1, y1, w, h))
-                                
                                 # Güven değeri
                                 conf = math.ceil((box.conf[0] * 100)) / 100
                                 
                                 # Sınıf ismi
                                 cls = int(box.cls[0])
-                                # Model sınıf adları varsa kullan, yoksa uygun baret etiketini kullan
+                                # Model sınıf adlarını kullan
                                 try:
-                                    class_name = classNames[cls]
-                                except (KeyError, IndexError):
-                                    # Varsayılan modelde sınıf adları farklı olabilir
-                                    # Kask/baret tespiti için güvenlik ekipmanı sınıflarını kontrol et
-                                    if cls in [0, 1]: # Bu sınıflar genelde insan, kişi vb.
-                                        class_name = "head without helmet"
-                                    else:  # Diğer sınıflar için
-                                        class_name = str(cls)
+                                    # Özel modelin sınıf adlarını kullan
+                                    if isinstance(classNames, dict):
+                                        class_name = classNames.get(cls, f"class_{cls}")
+                                    else:
+                                        class_name = classNames[cls]
+                                    
+                                    # 'helmet' sınıfını 'head with helmet' olarak değiştir
+                                    if class_name == 'helmet':
+                                        class_name = 'head with helmet'
+                                    elif class_name == 'head':
+                                        class_name = 'head without helmet'
+                                        
+                                except (KeyError, IndexError) as e:
+                                    # Sınıf adı bulunamazsa
+                                    print(f"LIVESTREAM: Sınıf adı bulunamadı: {cls}, hata: {str(e)}")
+                                    class_name = f"class_{cls}"
                                 
-                                # Etiket ekle
-                                cvzone.putTextRect(img, f'{class_name} {conf}', (max(0, x1), max(35, y1)), scale=1, thickness=1)
+                                # Renk seçimi - sınıfa göre
+                                if 'with helmet' in class_name or class_name == 'helmet':
+                                    color = (0, 255, 0)  # Yeşil - baretli
+                                elif 'without helmet' in class_name or class_name == 'head':
+                                    color = (0, 0, 255)  # Kırmızı - baretsiz
+                                elif class_name == 'person':
+                                    color = (255, 255, 0)  # Sarı - kişi
+                                else:
+                                    color = (200, 200, 200)  # Gri - diğer nesneler
                                 
-                                # Tespitleri kaydet
+                                # Renkli köşe dikdörtgeni çiz
+                                cvzone.cornerRect(img, (x1, y1, w, h), colorC=color, colorR=color)
+                                
+                                # Renkli etiket ekle
+                                cvzone.putTextRect(img, f'{class_name} {conf:.2f}', 
+                                                 (max(0, x1), max(35, y1)),
+                                                 scale=1, thickness=1,
+                                                 colorR=color, colorT=(255,255,255))
+                                
+                                # Tespitler ve renk bilgisini kaydet
                                 detections.append({
                                     'class': class_name,
                                     'confidence': round(float(conf), 2),
-                                    'box': [int(x1), int(y1), int(x2), int(y2)]
+                                    'box': [int(x1), int(y1), int(x2), int(y2)],
+                                    'color': color
                                 })
                     except Exception as e:
                         print(f"LIVESTREAM: YOLO işleme hatası: {str(e)}")
@@ -345,21 +418,36 @@ class LivestreamProcessorView(APIView):
     
     def _generate_frames(self):
         """Kare akışını MJPEG formatında döndürür"""
+        print("LIVESTREAM: Frame üretme başladı")
+        frame_counter = 0
+
+        # MJPEG header - bu kısmı kaldır, StreamingHttpResponse için content_type zaten belirtiliyor
+        # yield "Content-Type: multipart/x-mixed-replace; boundary=frame\r\n\r\n"
+        
         while self.is_processing:
             try:
                 with self.lock:
                     if self.last_frame is not None:
                         frame = self.last_frame.copy()
                     else:
+                        print("LIVESTREAM: Henüz frame yok, bekleniyor")
+                        time.sleep(0.1)
                         continue
                 
                 # JPEG'e dönüştür
-                _, buffer = cv2.imencode('.jpg', frame)
-                frame_bytes = buffer.tobytes()
-                
-                # MJPEG formatında streaming
-                yield (b'--frame\r\n'
-                       b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                try:
+                    _, buffer = cv2.imencode('.jpg', frame)
+                    frame_bytes = buffer.tobytes()
+                    frame_counter += 1
+                    
+                    if frame_counter % 10 == 0:  # Her 10 karede bir log
+                        print(f"LIVESTREAM: Üretilen kare {frame_counter}, boyut: {len(frame_bytes)} byte")
+                    
+                    # MJPEG formatında streaming
+                    yield (b'--frame\r\n'
+                           b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n')
+                except Exception as encode_err:
+                    print(f"LIVESTREAM: Kare kodlama hatası: {str(encode_err)}")
                 
                 # Yayın hızını düzenlemek için
                 time.sleep(0.03)  # ~30 FPS
@@ -367,6 +455,8 @@ class LivestreamProcessorView(APIView):
             except Exception as e:
                 print(f"LIVESTREAM akış hatası: {str(e)}")
                 time.sleep(0.1)
+        
+        print("LIVESTREAM: Frame üretimi durdu")
     
     def delete(self, request):
         """Video akışını durdur"""
